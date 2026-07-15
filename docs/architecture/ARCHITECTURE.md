@@ -177,9 +177,10 @@ Auto-compact default: about **85%** of `context_window`
 | Extension | What | Where |
 | --- | --- | --- |
 | **Skills** | Markdown playbooks the agent can load | `~/.logan/skills`, project skills, bundled |
-| **MCP** | External tools (GitHub, DBs, Excalidraw, …) | `[mcp_servers.*]` in config |
+| **MCP** | External tools (GitHub, DBs, design, …) | **Grok Build website connectors (preferred)** or `[mcp_servers.*]` |
+| **Excalidraw** | Diagrams | Connect via **Grok Build website connectors**; optional local `npx` fallback in `examples/config/mcp-excalidraw.toml` |
 | **Plugins** | Bundles of skills + MCP + hooks | marketplace / `~/.logan/plugins` |
-| **Hooks** | Lifecycle scripts on turns/tools | `xai-grok-hooks` |
+| **Hooks** | Lifecycle scripts on turns/tools | `xai-grok-hooks` + `examples/hooks/auto-reflect` |
 
 Bundled self-improve skills (Logan):
 
