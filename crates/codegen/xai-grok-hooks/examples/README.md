@@ -117,3 +117,17 @@ or
 ## Uninstall
 
 Remove the JSON file from `~/.logan/hooks/`. The hook stops running on the next session.
+### 5. Auto Reflect (`auto-reflect`) - Logan
+
+**Type:** passive (`Stop` + `SessionEnd`)
+
+Shipped under repo `examples/hooks/` (not only this crate examples tree).
+Appends reflection stubs to `~/.logan/memory/MEMORY.md` and
+`~/.logan/memory/reflections.log` for Hermes-style durable learning.
+
+```sh
+mkdir -p ~/.logan/hooks/bin
+cp examples/hooks/auto-reflect.json ~/.logan/hooks/
+cp examples/hooks/bin/auto-reflect.py ~/.logan/hooks/bin/
+chmod +x ~/.logan/hooks/bin/auto-reflect.py
+```

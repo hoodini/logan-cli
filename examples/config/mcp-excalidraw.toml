@@ -1,0 +1,18 @@
+# Excalidraw MCP for Logan
+# Author: Yuval Avidani (YUV.AI) - https://yuv.ai
+#
+# Requires Node.js (npx). Append to ~/.logan/config.toml:
+#   cat examples/config/mcp-excalidraw.toml >> ~/.logan/config.toml
+#
+# Then start logan and open /mcp (or run: logan mcp list)
+
+[mcp_servers.excalidraw]
+command = "npx"
+args = ["-y", "excalidraw-mcp"]
+# Optional: pin a working directory for diagram files
+# env = { EXCALIDRAW_DATA_DIR = "${HOME}/.logan/excalidraw" }
+
+# Hardened alternative (self-hosted / more features):
+# [mcp_servers.excalidraw-sentinel]
+# command = "npx"
+# args = ["-y", "excalidraw-mcp-sentinel"]

@@ -1,13 +1,31 @@
-# Logan (`logan`)
+<p align="center">
+  <img src="docs/assets/banner.jpg" alt="Logan CLI by Yuval Avidani (YUV.AI)" width="100%"/>
+</p>
 
-**Logan** is a terminal AI coding agent by
-**[Yuval Avidani](https://yuv.ai)** (YUV.AI) - AI Builder & Speaker.
+<h1 align="center">Logan <code>logan</code></h1>
 
-Forked from [xAI Grok Build](https://github.com/xai-org/grok-build) (Apache-2.0).
+<p align="center">
+  <strong>Terminal AI coding agent</strong> by
+  <a href="https://yuv.ai">Yuval Avidani</a> (YUV.AI) - AI Builder &amp; Speaker
+  <br/>
+  Fork of <a href="https://github.com/xai-org/grok-build">xAI Grok Build</a> (Apache-2.0)
+  with multi-LLM presets, Hermes-style learning, and ship-ready docs.
+</p>
+
+<p align="center">
+  <a href="https://github.com/hoodini/logan-cli"><img alt="GitHub" src="https://img.shields.io/badge/github-hoodini%2Flogan--cli-ff4d9a?style=flat-square"/></a>
+  <a href="docs/SETUP.md"><img alt="Setup" src="https://img.shields.io/badge/setup-5%20min-b2f2bb?style=flat-square"/></a>
+  <a href="docs/COMPARISON.md"><img alt="vs Grok Build" src="https://img.shields.io/badge/vs-Grok%20Build%20OSS-a5d8ff?style=flat-square"/></a>
+  <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-Apache%202.0-ffd60a?style=flat-square"/></a>
+</p>
+
+<p align="center">
+  <img src="docs/assets/screenshot-tui.jpg" alt="Logan TUI mock" width="90%"/>
+</p>
 
 ```sh
 logan --version
-# logan 0.1.x  ·  Logan TUI by Yuval Avidani (YUV.AI) - https://yuv.ai
+# Logan TUI by Yuval Avidani (YUV.AI) - https://yuv.ai
 ```
 
 | | |
@@ -19,248 +37,185 @@ logan --version
 | Facebook | [@yuval.avidani](https://facebook.com/yuval.avidani) |
 | GitHub | [@hoodini](https://github.com/hoodini) |
 | TikTok | [@yuval.ai](https://tiktok.com/@yuval.ai) |
-| Repo | [github.com/hoodini/logan-cli](https://github.com/hoodini/logan-cli) |
-
-> **Attribution:** Based on Grok Build by SpaceXAI / xAI. See [NOTICE](NOTICE)
-> and [LICENSE](LICENSE). Logan product work by Yuval Avidani (YUV.AI).
 
 ---
 
-## Architecture (read this)
+## Why Logan (vs Grok Build open source)?
 
-Deep dive: **[docs/architecture/ARCHITECTURE.md](docs/architecture/ARCHITECTURE.md)**
+<p align="center">
+  <img src="docs/assets/comparison.svg" alt="Grok Build vs Logan" width="95%"/>
+</p>
 
-| Diagram (open in [excalidraw.com](https://excalidraw.com)) | Topic |
+Full matrix: **[docs/COMPARISON.md](docs/COMPARISON.md)**
+
+| Logan adds | Detail |
 | --- | --- |
-| [01-prompt-lifecycle.excalidraw](docs/architecture/01-prompt-lifecycle.excalidraw) | User prompt → session → LLM → tools → UI |
-| [02-memory-sessions-context.excalidraw](docs/architecture/02-memory-sessions-context.excalidraw) | Short-term vs long-term memory, sessions, compaction |
-| [03-system-prompt-composition.excalidraw](docs/architecture/03-system-prompt-composition.excalidraw) | How the system prompt is layered |
-| [04-providers-self-improve.excalidraw](docs/architecture/04-providers-self-improve.excalidraw) | Multi-provider LLMs + Hermes-style learning |
+| **`logan` product identity** | Binary, `~/.logan`, YUV.AI credit |
+| **Multi-provider presets** | Anthropic, OpenAI, Gemini, OpenRouter, Ollama, LM Studio, LiteLLM, Bedrock-via-proxy |
+| **Self-improve + learn-user skills** | Hermes-style lessons + personal preferences |
+| **Auto reflection hooks** | `Stop` / `SessionEnd` → MEMORY.md |
+| **Architecture + Excalidraw diagrams** | Prompt lifecycle, memory, system prompt, providers |
+| **Excalidraw MCP wiring** | Ready TOML for diagram tools |
+| **Setup guide for humans + LLMs** | [docs/SETUP.md](docs/SETUP.md) |
+
+Upstream harness (tools, sessions, MCP engine, compaction, experimental memory)
+is preserved under Apache-2.0 - see [NOTICE](NOTICE).
+
+---
+
+## Quick start (5 minutes)
+
+```bash
+# 1) Build
+git clone https://github.com/hoodini/logan-cli.git && cd logan-cli
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh   # if needed
+source "$HOME/.cargo/env"
+cargo build -p xai-grok-pager-bin --release
+cp target/release/logan ~/.local/bin/logan
+export PATH="$HOME/.local/bin:$PATH"
+
+# 2) LLM preset (example: Anthropic)
+mkdir -p ~/.logan
+cat examples/config/providers.toml >> ~/.logan/config.toml
+# set default in config: [models] default = "claude-sonnet"
+export ANTHROPIC_API_KEY="sk-ant-..."
+
+# 3) Memory + learning
+# ensure [memory] enabled = true in config
+cp examples/config/USER_PREFERENCES.template.md ~/.logan/memory/MEMORY.md
+
+# 4) Auto-reflect hooks
+mkdir -p ~/.logan/hooks/bin
+cp examples/hooks/auto-reflect.json ~/.logan/hooks/
+cp examples/hooks/bin/auto-reflect.py ~/.logan/hooks/bin/
+chmod +x ~/.logan/hooks/bin/auto-reflect.py
+
+# 5) Optional Excalidraw MCP (needs Node/npx)
+cat examples/config/mcp-excalidraw.toml >> ~/.logan/config.toml
+
+# 6) Run
+logan --version
+logan -p "Say logan-ok" -m claude-sonnet
+logan   # interactive TUI
+```
+
+**Human + agent install playbook:** [docs/SETUP.md](docs/SETUP.md)
+
+---
+
+## Docs map
+
+| Doc | Contents |
+| --- | --- |
+| [docs/SETUP.md](docs/SETUP.md) | Install, LLM keys, memory, hooks, MCP, LLM-agent checklist |
+| [docs/COMPARISON.md](docs/COMPARISON.md) | Grok Build OSS vs Logan |
+| [docs/architecture/ARCHITECTURE.md](docs/architecture/ARCHITECTURE.md) | Prompt lifecycle, memory, system prompt, providers |
+| [examples/config/providers.toml](examples/config/providers.toml) | Copy-paste model blocks |
+| [examples/config/mcp-excalidraw.toml](examples/config/mcp-excalidraw.toml) | Excalidraw MCP |
+| [examples/hooks/](examples/hooks/) | Auto-reflect hooks |
+
+### Excalidraw diagrams
+
+Open on [excalidraw.com](https://excalidraw.com) (drag-and-drop):
+
+- [01-prompt-lifecycle.excalidraw](docs/architecture/01-prompt-lifecycle.excalidraw)
+- [02-memory-sessions-context.excalidraw](docs/architecture/02-memory-sessions-context.excalidraw)
+- [03-system-prompt-composition.excalidraw](docs/architecture/03-system-prompt-composition.excalidraw)
+- [04-providers-self-improve.excalidraw](docs/architecture/04-providers-self-improve.excalidraw)
 
 ---
 
 ## How a prompt is processed
 
 ```text
-You type a prompt (TUI / headless / ACP)
-  -> logan CLI parse
-  -> Session actor (slash commands, skills rewrite)
-  -> ChatState builds request
-       - system prompt layers
-       - tool schemas
-       - short-term history
-       - optional <memory-context> from long-term memory
-  -> Sampler HTTP (chat_completions | responses | messages)
-  -> Tool loop (edit, shell, MCP, skills) until done
-  -> Stream tokens to TUI + write session logs
+You type a prompt
+  -> logan CLI
+  -> Session actor (slash / skills)
+  -> ChatState (history + memory inject + tools)
+  -> Sampler (chat_completions | responses | messages)
+  -> Tool loop (edit, shell, MCP, skills)
+  -> Stream to TUI + session logs
+  -> Stop hook: auto-reflect stub -> MEMORY.md
 ```
 
-Key crates: `xai-grok-pager-bin` → `xai-grok-shell` → `xai-chat-state` →
-`xai-grok-sampler` → `xai-grok-tools` / MCP.
+### Memory
 
----
+| Kind | Where |
+| --- | --- |
+| Short-term | Session conversation + `~/.logan/sessions/...` |
+| Long-term | `~/.logan/memory/MEMORY.md` + hybrid index |
+| Learning | `/flush`, skills, autoDream, **auto-reflect hooks** |
 
-## Memory: short-term, long-term, sessions
+### System prompt
 
-### Short-term (this session)
+Layered (no fixed size): base template → tools → skills → AGENTS.md → memory
+context → preferences / lessons. See architecture doc.
 
-- In-memory conversation held by **ChatStateActor**
-- On disk: `~/.logan/sessions/<cwd>/<session-id>/`
-  - `updates.jsonl` - resume stream
-  - `chat_history.jsonl` - model-facing history
-- Tool results pruned around **~50%** of the context window
-- Auto-compact around **~85%** (summarize + continue)
+### Multi-provider LLMs
 
-### Long-term (across sessions)
-
-Opt-in memory engine (`xai-grok-memory`):
-
-```toml
-# ~/.logan/config.toml
-[memory]
-enabled = true
-
-[memory.session]
-save_on_end = true
-
-[memory.dream]
-enabled = true
-```
+| Provider | Path |
+| --- | --- |
+| Anthropic | `api_backend = "messages"` |
+| OpenAI | `chat_completions` / `responses` |
+| Gemini | OpenAI-compat URL |
+| OpenRouter | `openrouter.ai/api/v1` |
+| Ollama / LM Studio | localhost OpenAI-compat |
+| Bedrock | via **LiteLLM** proxy |
 
 ```bash
-logan --experimental-memory
-# or
-export GROK_MEMORY=1
+logan models
+/model claude-sonnet
 ```
 
-| Store | Path |
-| --- | --- |
-| Global prefs / lessons | `~/.logan/memory/MEMORY.md` |
-| Project memory | `~/.logan/memory/<project>/MEMORY.md` |
-| Session logs | `.../sessions/*.md` |
-| Hybrid search index | `index.sqlite` (FTS + optional vectors) |
-
-Commands: `/remember`, `/flush`, `/memory on|off`  
-Tools: `memory_search`, `memory_get`  
-Background: **autoDream** consolidates session logs into evergreen MEMORY.md.
-
-### Sessions
-
-| Action | Command |
-| --- | --- |
-| Continue last | `logan -c` / `--continue` |
-| Resume id | `logan --resume <id>` |
-| List | `logan sessions` |
-
----
-
-## System prompt: length and construction
-
-There is **no fixed system-prompt token count**. Size grows with tools, skills,
-and project rules. Layers:
-
-1. Base template (identity, safety, tool rules) - product label **Logan**
-2. API tool schemas (often the largest cost)
-3. Skills catalog (budgeted descriptions)
-4. Project rules (`AGENTS.md`, `Claude.md`, `.logan/rules/`)
-5. Memory section + first-turn `<memory-context>` when memory is on
-6. Role / persona / custom overrides
-7. Self-improve lessons + user **Preferences** from MEMORY.md
-
-After compaction a shorter compact system prompt is used.
-
-Template source: `crates/codegen/xai-grok-agent/templates/prompt.md`  
-Assembler: `crates/codegen/xai-grok-agent` (`PromptContext`, `AgentBuilder`)
-
----
-
-## Skills, MCP connectors, plugins
-
-| Extension | Purpose |
-| --- | --- |
-| **Skills** | Markdown playbooks the agent can load mid-task |
-| **MCP** | Connectors (GitHub, DBs, design tools, …) |
-| **Plugins** | Bundles of skills + MCP + hooks |
-| **Hooks** | Lifecycle automation on turns/tools |
-
-Bundled Logan skills for learning:
-
-- **`self-improve`** - Hermes-style reflection: what worked / failed → lessons
-- **`learn-user`** - extract and store your preferences (style, risk, habits)
+### Self-improve
 
 ```text
 /skill self-improve
 /skill learn-user
+/flush
 ```
+
+Plus automatic `Stop` / `SessionEnd` hooks writing reflection stubs.
 
 ---
 
-## Multi-provider LLMs
+## Screenshots and assets
 
-Logan speaks three backends:
-
-| `api_backend` | Use for |
+| Asset | Path |
 | --- | --- |
-| `chat_completions` | OpenAI, OpenRouter, Ollama, LM Studio, LiteLLM, Gemini OpenAI-compat |
-| `responses` | OpenAI Responses / xAI-style |
-| `messages` | Anthropic Messages API |
-
-**Copy-paste presets:** [examples/config/providers.toml](examples/config/providers.toml)
-
-| Provider | How |
-| --- | --- |
-| **Anthropic** | `api_backend = "messages"` + `ANTHROPIC_API_KEY` |
-| **OpenAI** | `chat_completions` or `responses` + `OPENAI_API_KEY` |
-| **Gemini** | OpenAI-compat base URL + `GEMINI_API_KEY` |
-| **OpenRouter** | `https://openrouter.ai/api/v1` + `OPENROUTER_API_KEY` |
-| **AWS Bedrock** | Via **LiteLLM** proxy (native SigV4 not built-in yet) |
-| **Ollama** | `http://localhost:11434/v1` |
-| **LM Studio** | `http://localhost:1234/v1` |
-| **LiteLLM** | Point `base_url` at your proxy |
-
-```bash
-# merge presets into ~/.logan/config.toml, then:
-export ANTHROPIC_API_KEY=...
-export OPENAI_API_KEY=...
-export OPENROUTER_API_KEY=...
-logan models
-logan -m claude-sonnet -p "hello"
-# TUI:
-/model openrouter-auto
-```
-
-Full guide: user-guide custom models under
-`crates/codegen/xai-grok-pager/docs/user-guide/11-custom-models.md`.
+| Hero banner | [docs/assets/banner.jpg](docs/assets/banner.jpg) |
+| TUI visual | [docs/assets/screenshot-tui.jpg](docs/assets/screenshot-tui.jpg) |
+| Comparison graphic | [docs/assets/comparison.svg](docs/assets/comparison.svg) |
+| Terminal SVG mock | [docs/assets/screenshot-tui.svg](docs/assets/screenshot-tui.svg) |
 
 ---
 
-## Self-improve (learn what works - and learn you)
-
-Logan does not retrain weights. It learns like strong agent harnesses (Hermes-style):
-
-1. **Observe** session outcomes and your corrections  
-2. **Reflect** with `/flush` + skill `self-improve`  
-3. **Store** durable lessons in `~/.logan/memory/MEMORY.md`  
-4. **Retrieve** on later turns via hybrid memory search  
-5. **Personalize** with skill `learn-user` → `## Preferences`
-
-Seed your profile:
-
-```bash
-mkdir -p ~/.logan/memory
-cp examples/config/USER_PREFERENCES.template.md ~/.logan/memory/MEMORY.md
-# edit Preferences for how you like to work
-```
-
-Enable memory (required for durable learning):
-
-```toml
-[memory]
-enabled = true
-[memory.dream]
-enabled = true
-```
-
----
-
-## Install / build
-
-### Prerequisites
-
-- Rust 1.92+ (see `rust-toolchain.toml`)
-- `protoc` on PATH
-- Optional: `dotslash` for repo `bin/protoc`
+## Build notes
 
 ```sh
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-source "$HOME/.cargo/env"
-cd logan-cli
-cargo build -p xai-grok-pager-bin --release
-cp target/release/logan ~/.local/bin/logan
-logan --version
+cargo build -p xai-grok-pager-bin --release   # -> target/release/logan
+cargo check -p xai-grok-pager-bin
 ```
 
-Config home: **`~/.logan`** (`LOGAN_HOME` override).
+Config home: **`~/.logan`** (`LOGAN_HOME`).
 
 ---
 
-## Status of this fork
+## Status
 
 | Surface | State |
 | --- | --- |
-| Product name / binary | **Logan** / `logan` |
-| Config home | `~/.logan` |
-| Architecture docs + diagrams | Shipped |
-| Multi-provider presets | Shipped (`examples/config/providers.toml`) |
-| Self-improve + learn-user skills | Shipped |
-| Memory / dream / sessions | Upstream capability, documented for Logan |
-| Native Bedrock SigV4 | Not yet (use LiteLLM) |
-| Internal crate names | Still `xai-grok-*` |
-| Default auth CDN | Still xAI-shaped until rewired |
+| Binary / brand | Logan · YUV.AI |
+| Multi-LLM presets | Shipped |
+| Self-improve skills + auto-reflect hooks | Shipped |
+| Excalidraw MCP example | Shipped |
+| Architecture docs + banner | Shipped |
+| Native Bedrock SigV4 | Use LiteLLM |
+| Internal crates | Still `xai-grok-*` |
 
 ---
 
 ## License
 
-Fork changes by **Yuval Avidani (YUV.AI)**.  
-Upstream Grok Build remains Apache-2.0 - see [LICENSE](LICENSE) and [NOTICE](NOTICE).
+Logan product work by **Yuval Avidani (YUV.AI)**.  
+Upstream Grok Build remains Apache-2.0 - [LICENSE](LICENSE) · [NOTICE](NOTICE) · [AUTHORS](AUTHORS.md).

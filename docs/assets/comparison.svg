@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="640" viewBox="0 0 1200 640">
+  <rect width="1200" height="640" fill="#0d0d0f"/>
+  <text x="60" y="70" fill="#f5f0e8" font-family="system-ui,sans-serif" font-size="36" font-weight="800">Grok Build OSS vs Logan</text>
+  <text x="60" y="110" fill="#9a9590" font-family="system-ui,sans-serif" font-size="18">What Logan adds on top of the open-source harness</text>
+  <!-- left -->
+  <rect x="60" y="150" width="500" height="420" rx="16" fill="#16161a" stroke="#444"/>
+  <text x="90" y="200" fill="#9a9590" font-family="system-ui,sans-serif" font-size="24" font-weight="700">Grok Build (upstream)</text>
+  <text x="90" y="250" fill="#cfc9c2" font-family="system-ui,sans-serif" font-size="18">• Terminal agent harness + TUI</text>
+  <text x="90" y="290" fill="#cfc9c2" font-family="system-ui,sans-serif" font-size="18">• Tools, sessions, MCP, skills</text>
+  <text x="90" y="330" fill="#cfc9c2" font-family="system-ui,sans-serif" font-size="18">• Custom model backends (generic)</text>
+  <text x="90" y="370" fill="#cfc9c2" font-family="system-ui,sans-serif" font-size="18">• Optional experimental memory</text>
+  <text x="90" y="410" fill="#cfc9c2" font-family="system-ui,sans-serif" font-size="18">• xAI-centric product identity</text>
+  <text x="90" y="450" fill="#cfc9c2" font-family="system-ui,sans-serif" font-size="18">• No opinionated learning loop</text>
+  <!-- right -->
+  <rect x="640" y="150" width="500" height="420" rx="16" fill="#1a1218" stroke="#ff4d9a" stroke-width="2"/>
+  <text x="670" y="200" fill="#ffd60a" font-family="system-ui,sans-serif" font-size="24" font-weight="700">Logan (YUV.AI)</text>
+  <text x="670" y="250" fill="#f5f0e8" font-family="system-ui,sans-serif" font-size="18">• Full rebrand + logan binary</text>
+  <text x="670" y="290" fill="#f5f0e8" font-family="system-ui,sans-serif" font-size="18">• Provider presets (8+ LLMs)</text>
+  <text x="670" y="330" fill="#f5f0e8" font-family="system-ui,sans-serif" font-size="18">• self-improve + learn-user skills</text>
+  <text x="670" y="370" fill="#f5f0e8" font-family="system-ui,sans-serif" font-size="18">• Auto post-turn reflection hooks</text>
+  <text x="670" y="410" fill="#f5f0e8" font-family="system-ui,sans-serif" font-size="18">• Architecture + Excalidraw diagrams</text>
+  <text x="670" y="450" fill="#f5f0e8" font-family="system-ui,sans-serif" font-size="18">• Excalidraw MCP wiring</text>
+  <text x="670" y="490" fill="#f5f0e8" font-family="system-ui,sans-serif" font-size="18">• Yuval / YUV.AI product + docs</text>
+  <text x="670" y="530" fill="#b2f2bb" font-family="system-ui,sans-serif" font-size="16">Open source fork · Apache-2.0 · hoodini/logan-cli</text>
+</svg>

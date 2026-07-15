@@ -1,0 +1,321 @@
+# Logan - quick setup guide
+
+For humans **and** for coding agents / LLMs installing Logan on a machine.
+
+**Author:** Yuval Avidani (YUV.AI) - https://yuv.ai · GitHub [@hoodini](https://github.com/hoodini)
+
+---
+
+## 0. Goal checklist
+
+After this guide you should have:
+
+1. `logan` on PATH  
+2. `~/.logan/config.toml` with memory + at least one LLM  
+3. Optional: Excalidraw MCP + auto-reflection hooks  
+4. A first successful prompt
+
+---
+
+## 1. Prerequisites
+
+| Tool | Why |
+| --- | --- |
+| macOS or Linux | Primary supported hosts |
+| `git`, `curl` | Clone / install |
+| Rust 1.92+ via rustup | Build from source |
+| `protoc` | Proto codegen |
+| Node.js + `npx` | Optional MCP servers (Excalidraw) |
+| API keys | Your chosen LLM provider(s) |
+
+---
+
+## 2. Install Logan (from source)
+
+```bash
+# Rust
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+source "$HOME/.cargo/env"
+
+# Clone
+git clone https://github.com/hoodini/logan-cli.git
+cd logan-cli
+
+# Build release binary
+cargo build -p xai-grok-pager-bin --release
+
+# Install to PATH
+mkdir -p "$HOME/.local/bin"
+cp target/release/logan "$HOME/.local/bin/logan"
+export PATH="$HOME/.local/bin:$PATH"
+
+logan --version
+# expect: logan 0.1.x  and about line with Yuval Avidani (YUV.AI)
+```
+
+Optional: `brew install protoc` / use Anaconda `protoc`, and `brew install dotslash` for repo `bin/protoc`.
+
+---
+
+## 3. First config directory
+
+```bash
+mkdir -p ~/.logan/memory ~/.logan/hooks/bin
+```
+
+Config file: **`~/.logan/config.toml`**  
+Override root with env: **`LOGAN_HOME`**.
+
+---
+
+## 4. Choose and configure an LLM
+
+Logan supports three backends:
+
+| `api_backend` | Typical providers |
+| --- | --- |
+| `chat_completions` | OpenAI, OpenRouter, Gemini OpenAI-compat, Ollama, LM Studio, LiteLLM |
+| `responses` | OpenAI Responses, some xAI-style APIs |
+| `messages` | Anthropic |
+
+### Fast path - copy presets
+
+```bash
+# From the repo root:
+cat examples/config/providers.toml >> ~/.logan/config.toml
+```
+
+Then set the default model and API keys.
+
+### Minimal Anthropic example
+
+```toml
+# ~/.logan/config.toml
+[models]
+default = "claude-sonnet"
+
+[model.claude-sonnet]
+model = "claude-sonnet-4-5"
+base_url = "https://api.anthropic.com/v1"
+name = "Claude Sonnet"
+api_backend = "messages"
+context_window = 200000
+env_key = "ANTHROPIC_API_KEY"
+extra_headers = { "anthropic-version" = "2023-06-01" }
+```
+
+```bash
+export ANTHROPIC_API_KEY="sk-ant-..."
+logan -m claude-sonnet -p "Reply with: logan-ok"
+```
+
+### Minimal OpenAI
+
+```toml
+[models]
+default = "gpt-4o"
+
+[model.gpt-4o]
+model = "gpt-4o"
+base_url = "https://api.openai.com/v1"
+env_key = "OPENAI_API_KEY"
+context_window = 128000
+```
+
+```bash
+export OPENAI_API_KEY="sk-..."
+```
+
+### OpenRouter
+
+```toml
+[model.openrouter-auto]
+model = "openrouter/auto"
+base_url = "https://openrouter.ai/api/v1"
+env_key = "OPENROUTER_API_KEY"
+extra_headers = { "HTTP-Referer" = "https://yuv.ai", "X-Title" = "Logan CLI" }
+```
+
+### Ollama (local)
+
+```bash
+ollama serve
+ollama pull qwen2.5-coder:14b
+```
+
+```toml
+[model.ollama-qwen]
+model = "qwen2.5-coder:14b"
+base_url = "http://localhost:11434/v1"
+name = "Qwen (Ollama)"
+context_window = 32768
+```
+
+### LM Studio
+
+```toml
+[model.lmstudio]
+model = "local-model"
+base_url = "http://localhost:1234/v1"
+```
+
+### Gemini
+
+```toml
+[model.gemini-flash]
+model = "gemini-2.5-flash"
+base_url = "https://generativelanguage.googleapis.com/v1beta/openai"
+env_key = "GEMINI_API_KEY"
+context_window = 1000000
+```
+
+### AWS Bedrock
+
+Native SigV4 is not built in. Run [LiteLLM](https://docs.litellm.ai/) as a proxy
+and point Logan at it (see `examples/config/providers.toml`).
+
+### List / switch models
+
+```bash
+logan models
+logan -m claude-sonnet -p "hi"
+# inside TUI:
+/model openrouter-auto
+```
+
+Full matrix: [examples/config/providers.toml](../examples/config/providers.toml)
+
+---
+
+## 5. Enable memory + learning (recommended)
+
+```toml
+[memory]
+enabled = true
+
+[memory.session]
+save_on_end = true
+
+[memory.dream]
+enabled = true
+
+[memory.initial_injection]
+enabled = true
+```
+
+```bash
+cp examples/config/USER_PREFERENCES.template.md ~/.logan/memory/MEMORY.md
+# edit Preferences for the human user
+```
+
+Or: `logan --experimental-memory` / `export GROK_MEMORY=1`.
+
+---
+
+## 6. Auto post-turn reflection hooks
+
+Install Logan's reflection hooks (appends lesson stubs when a turn/session ends):
+
+```bash
+mkdir -p ~/.logan/hooks/bin
+cp examples/hooks/auto-reflect.json ~/.logan/hooks/
+cp examples/hooks/bin/auto-reflect.py ~/.logan/hooks/bin/
+chmod +x ~/.logan/hooks/bin/auto-reflect.py
+```
+
+Events: **`Stop`** (agent finished a turn) and **`SessionEnd`**.
+
+Logs: `~/.logan/memory/reflections.log`  
+Durable appends: `~/.logan/memory/MEMORY.md` under `## Auto reflections`
+
+---
+
+## 7. Wire Excalidraw MCP
+
+Requires Node.js. Example in `examples/config/mcp-excalidraw.toml`:
+
+```toml
+[mcp_servers.excalidraw]
+command = "npx"
+args = ["-y", "excalidraw-mcp"]
+```
+
+```bash
+# merge into config
+cat examples/config/mcp-excalidraw.toml >> ~/.logan/config.toml
+logan   # then /mcp or inspect servers
+```
+
+Alternative packages if one fails: `excalidraw-mcp-sentinel`, or a local stdio
+server you control. Architecture diagrams in-repo are already
+`docs/architecture/*.excalidraw` (open on excalidraw.com without MCP).
+
+---
+
+## 8. First run
+
+```bash
+cd /path/to/your/project
+logan
+# or non-interactive:
+logan -p "Summarize this repo in 5 bullets" --always-approve
+```
+
+Useful slash commands:
+
+| Command | Purpose |
+| --- | --- |
+| `/model` | Switch LLM |
+| `/memory on` | Enable memory this session |
+| `/remember ...` | Save a durable fact |
+| `/flush` | Rich session summary to memory |
+| `/skill self-improve` | Reflect on what worked / failed |
+| `/skill learn-user` | Update preference profile |
+| `/mcp` | MCP servers |
+| `/help` | Help |
+
+---
+
+## 9. Instructions for LLM / coding agents
+
+If you are an AI installer, follow this order **exactly**:
+
+1. Check `logan --version`. If missing, clone `hoodini/logan-cli` and
+   `cargo build -p xai-grok-pager-bin --release`; copy binary to
+   `$HOME/.local/bin/logan`.
+2. Ensure `PATH` includes `$HOME/.local/bin` and `$HOME/.cargo/bin`.
+3. Create `$LOGAN_HOME` or `~/.logan`.
+4. Write `config.toml` with **one** working `[model.*]` + `[models].default`.
+5. Export the matching API key env var (do not commit secrets).
+6. Enable `[memory] enabled = true`.
+7. Optionally install auto-reflect hooks and Excalidraw MCP from `examples/`.
+8. Smoke test: `logan -p "ping" -m <model>` and confirm a non-error reply.
+9. Prefer reading `docs/ARCHITECTURE.md` and `docs/COMPARISON.md` before large
+   refactors.
+10. Never store API keys in MEMORY.md or git.
+
+Success criteria: `logan --version` works, smoke prompt returns model text,
+config lives under `~/.logan`.
+
+---
+
+## 10. Troubleshooting
+
+| Symptom | Fix |
+| --- | --- |
+| `logan: command not found` | Export PATH; reinstall binary |
+| Auth browser opens for xAI | Use BYOK custom models; set `api_key`/`env_key` on `[model.*]` |
+| Model not found | `logan models`; check `[model.<id>]` name vs `-m` |
+| Anthropic 401 | Use `messages` backend + correct key headers |
+| Ollama connection refused | `ollama serve` and correct `base_url` |
+| Memory not recalling | Enable memory; `/flush`; wait for index |
+| Hooks not firing | Files under `~/.logan/hooks/`; executable bit on scripts |
+
+---
+
+## Related docs
+
+- [COMPARISON.md](COMPARISON.md) - Logan vs Grok Build OSS  
+- [architecture/ARCHITECTURE.md](architecture/ARCHITECTURE.md)  
+- [examples/config/providers.toml](../examples/config/providers.toml)  
+- Upstream-style guides in `crates/codegen/xai-grok-pager/docs/user-guide/`
