@@ -72,13 +72,17 @@ pub fn maybe_commit_welcome(app: &mut AppView, terminal: &mut PagerTerminal) {
     let mut info: Vec<Line<'static>> = Vec::new();
     info.push(Line::from(vec![
         Span::styled(
-            "Logan",
+            "LOGAN",
             Style::default()
                 .fg(theme.accent_user)
                 .add_modifier(Modifier::BOLD),
         ),
         Span::styled(format!("  v{version}"), theme.muted()),
     ]));
+    info.push(Line::from(Span::styled(
+        "claws out · inspired by Wolverine",
+        theme.muted(),
+    )));
     info.push(Line::from(Span::styled(
         "by Yuval Avidani (YUV.AI)  yuv.ai",
         theme.muted(),

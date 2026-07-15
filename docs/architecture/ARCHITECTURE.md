@@ -3,6 +3,9 @@
 **Author:** Yuval Avidani (YUV.AI) - AI Builder & Speaker  
 Web: [yuv.ai](https://yuv.ai) · GitHub: [hoodini](https://github.com/hoodini) · X: [@yuvalav](https://x.com/yuvalav)
 
+**Vibe:** inspired by Wolverine - heal, adapt, claws out for hard bugs (fan
+tribute aesthetic, not affiliated with Marvel).
+
 This document explains how Logan runs a prompt from keystroke to model response,
 how memory and sessions work, how the system prompt is built, and how to plug
 in multiple LLM providers. Open the companion Excalidraw files in

@@ -230,25 +230,35 @@ Durable appends: `~/.logan/memory/MEMORY.md` under `## Auto reflections`
 
 ---
 
-## 7. Wire Excalidraw MCP
+## 7. MCP connectors (Excalidraw)
 
-Requires Node.js. Example in `examples/config/mcp-excalidraw.toml`:
+### Preferred - Grok Build website connectors
+
+Logan inherits the Grok Build MCP connector stack. **Connect Excalidraw (and
+other servers) from the Grok Build website connectors UI.** That is the
+supported product path we use - no local Node process required once the
+connector is linked to your account/session.
+
+After connecting on the website, start `logan` and confirm the server is
+visible via `/mcp` or `logan mcp list` (depending on your build/features).
+
+### Optional local fallback (stdio / npx)
+
+For offline or custom setups only:
 
 ```toml
+# examples/config/mcp-excalidraw.toml
 [mcp_servers.excalidraw]
 command = "npx"
 args = ["-y", "excalidraw-mcp"]
 ```
 
 ```bash
-# merge into config
 cat examples/config/mcp-excalidraw.toml >> ~/.logan/config.toml
-logan   # then /mcp or inspect servers
 ```
 
-Alternative packages if one fails: `excalidraw-mcp-sentinel`, or a local stdio
-server you control. Architecture diagrams in-repo are already
-`docs/architecture/*.excalidraw` (open on excalidraw.com without MCP).
+Repo diagrams are also plain files under `docs/architecture/*.excalidraw`
+(open on [excalidraw.com](https://excalidraw.com) with drag-and-drop - no MCP).
 
 ---
 

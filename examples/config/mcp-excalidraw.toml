@@ -1,18 +1,18 @@
-# Excalidraw MCP for Logan
+# Excalidraw MCP for Logan - OPTIONAL LOCAL FALLBACK
 # Author: Yuval Avidani (YUV.AI) - https://yuv.ai
 #
-# Requires Node.js (npx). Append to ~/.logan/config.toml:
-#   cat examples/config/mcp-excalidraw.toml >> ~/.logan/config.toml
+# PREFERRED: connect Excalidraw via the Grok Build website connectors UI
+# (same connector stack Logan inherits). No npx required once linked.
 #
-# Then start logan and open /mcp (or run: logan mcp list)
+# Use this file only for offline/local stdio setups.
+#   cat examples/config/mcp-excalidraw.toml >> ~/.logan/config.toml
+# Then: logan  →  /mcp
 
 [mcp_servers.excalidraw]
 command = "npx"
 args = ["-y", "excalidraw-mcp"]
-# Optional: pin a working directory for diagram files
-# env = { EXCALIDRAW_DATA_DIR = "${HOME}/.logan/excalidraw" }
 
-# Hardened alternative (self-hosted / more features):
+# Hardened alternative:
 # [mcp_servers.excalidraw-sentinel]
 # command = "npx"
 # args = ["-y", "excalidraw-mcp-sentinel"]

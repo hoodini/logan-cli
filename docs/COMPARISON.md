@@ -21,7 +21,9 @@ learning loops, architecture docs, and ship-ready setup.
 | Auto post-turn reflection | No first-class loop | **`Stop` / `SessionEnd` hooks** → MEMORY.md |
 | Memory UX packaging | Experimental, opt-in | **Guided setup + preference template** |
 | Architecture docs | User guide fragments | **Full ARCHITECTURE + Excalidraw diagrams** |
-| Excalidraw MCP | Not productized | **Wired example config** |
+| Excalidraw / MCP connectors | Website connectors + local MCP | **Same website connectors (preferred)** + optional local fallback |
+| Wolverine-inspired brand | No | **Claw banner, ASCII, welcome tagline** |
+| Prompt-journey on README | No first-class journey | **Infographics + 8-step path on README** |
 | Repo banner / screenshots | Upstream branding | **Logan hero assets** |
 | Comparison + LLM setup guide | - | **This doc + [SETUP.md](SETUP.md)** |
 | Attribution | xAI | Logan + Apache NOTICE for upstream |
