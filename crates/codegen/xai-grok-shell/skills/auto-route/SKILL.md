@@ -4,6 +4,8 @@ description: >
   Recommend or switch to a token-saving model tier (fast / default / premium /
   local / gateway) based on task hardness. Triggers: "auto route", "save
   tokens", "use cheap model", "route this task", "which model should we use".
+model: tier-fast
+effort: low
 ---
 
 # Auto-route (Logan)

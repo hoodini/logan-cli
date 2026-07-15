@@ -5,6 +5,8 @@ description: >
   distill what worked, what failed, and durable lessons into long-term memory
   (MEMORY.md Lessons / Preferences). Triggers: "self improve", "reflect on
   this session", "what worked", "remember this lesson", "learn from failure".
+model: tier-default
+effort: medium
 ---
 
 # Self-improve (Logan)

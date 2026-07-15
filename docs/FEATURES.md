@@ -169,13 +169,36 @@ feature flag) so the `update_goal` tool is in the toolset.
 
 ---
 
+## Per-skill / per-subagent models
+
+| Mechanism | Status |
+| --- | --- |
+| Skill frontmatter `model:` / `effort:` | **Supported** |
+| Agent/subagent frontmatter `model: inherit\|id` | **Supported** |
+| Web search / summary / image models in config | **Supported** |
+| Goal planner/strategist models | **Supported** (flags) |
+| Example agents + assignment TOML | **Shipped** - see [MODEL_ROUTING.md](MODEL_ROUTING.md) |
+
+## Automations / schedules
+
+| Mechanism | Status |
+| --- | --- |
+| `/loop`, `scheduler_create/list/delete`, `monitor` | **Supported** in-session |
+| OS cron / launchd / Task Scheduler + headless | **Documented** - [AUTOMATIONS.md](AUTOMATIONS.md) |
+| Wake sleeping computer | **OS power**, not Logan-core |
+
+## Prompt journey with real token picture
+
+Concrete walkthrough: [PROMPT_JOURNEY_WALKTHROUGH.md](PROMPT_JOURNEY_WALKTHROUGH.md)
+
 ## Priority build order (product)
 
 1. **Local usage jsonl + `/stats` UX** - devs feel control immediately  
-2. **Auto-route tiers** - real token savings  
+2. **Auto-route tiers + native `--route auto`** - real token savings  
 3. **Langfuse OTEL recipe** - team observability  
 4. **HTTP remote agent** hardened (auth, sandbox, quotas)  
 5. **Cost tables** per model in config  
+6. **UI for models-per-role** map  
 
 ---
 

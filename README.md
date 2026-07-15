@@ -112,7 +112,11 @@ Extra visuals (optional): [journey SVG](docs/assets/infographic-prompt-journey.s
 | **Langfuse** | **OTEL path** | `examples/config/observability.toml` → OTLP to Langfuse |
 | **Remote agent for other AIs** | **Works today** | Headless `-p` · `agent stdio` · HTTP wrapper |
 
-Full map: **[docs/FEATURES.md](docs/FEATURES.md)** · Remote: **[docs/REMOTE_AGENT.md](docs/REMOTE_AGENT.md)**
+| **Per-skill / subagent models** | **Supported** | Skill + agent frontmatter `model:` · [MODEL_ROUTING.md](docs/MODEL_ROUTING.md) |
+| **Schedules / automations** | **Supported + OS recipes** | `/loop` · `scheduler_*` · cron/launchd/Task Scheduler · [AUTOMATIONS.md](docs/AUTOMATIONS.md) |
+
+Full map: **[docs/FEATURES.md](docs/FEATURES.md)** · Remote: **[docs/REMOTE_AGENT.md](docs/REMOTE_AGENT.md)**  
+**Visual real example (system prompt + context window):** **[docs/PROMPT_JOURNEY_WALKTHROUGH.md](docs/PROMPT_JOURNEY_WALKTHROUGH.md)**
 
 ### Auto-routing (save tokens)
 
@@ -318,6 +322,9 @@ Repo diagrams are also plain files you can open on [excalidraw.com](https://exca
 | Doc | Contents |
 | --- | --- |
 | [docs/FEATURES.md](docs/FEATURES.md) | Goals, tokens, auto-route, LiteLLM/Langfuse, remote agent |
+| [docs/PROMPT_JOURNEY_WALKTHROUGH.md](docs/PROMPT_JOURNEY_WALKTHROUGH.md) | **Real example**: system prompt + context window |
+| [docs/MODEL_ROUTING.md](docs/MODEL_ROUTING.md) | Models per skill / subagent / role |
+| [docs/AUTOMATIONS.md](docs/AUTOMATIONS.md) | `/loop`, scheduler, cron, launchd, Windows |
 | [docs/REMOTE_AGENT.md](docs/REMOTE_AGENT.md) | Call Logan from other AIs / HTTP |
 | [docs/SETUP.md](docs/SETUP.md) | Install + LLM setup |
 | [docs/COMPARISON.md](docs/COMPARISON.md) | vs Grok Build OSS |

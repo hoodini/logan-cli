@@ -6,6 +6,8 @@ description: >
   tailored - especially for Yuval Avidani / YUV.AI. Triggers: "learn my
   preferences", "remember how I like", "update my profile", "what do you know
   about me".
+model: tier-fast
+effort: low
 ---
 
 # Learn user (Logan)
