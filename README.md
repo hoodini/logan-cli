@@ -47,46 +47,36 @@ logan --version
 
 ## Prompt journey (how a prompt is processed)
 
-This is the core of Logan. **Every user message follows this path:**
+This is the core of Logan. **Every user message follows this path**
+(Mermaid renders natively on GitHub):
 
-<p align="center">
-  <img src="docs/assets/infographic-prompt-journey.jpg" alt="Logan prompt journey infographic" width="100%"/>
-</p>
-
-<p align="center">
-  <img src="docs/assets/infographic-prompt-journey.svg" alt="Logan prompt journey diagram (SVG)" width="100%"/>
-</p>
-
-```text
-1. YOU TYPE          TUI prompt / headless -p / ACP editor
-        |
-        v
-2. CLI PARSE         logan binary (clap) · cwd · model · flags
-        |
-        v
-3. SESSION ACTOR     handle_prompt · slash commands · skill rewrite
-        |
-        v
-4. BUILD REQUEST     ChatStateActor · history · prune tool results (~50%)
-        |
-        v
-5. SYSTEM PROMPT     layers stacked (see below) + tool schemas
-        |
-        v
-6. SAMPLER (LLM)     chat_completions | responses | messages
-                     Anthropic · OpenAI · Gemini · OpenRouter · Ollama · …
-        |
-        v
-7. TOOL LOOP         edit · shell · search · MCP · skills
-                     repeat until end_turn
-        |
-        v
-8. STREAM + LEARN    TUI stream · updates.jsonl
-                     Stop/SessionEnd hooks → MEMORY.md
-                     /flush · self-improve · autoDream
+```mermaid
+flowchart TD
+  A[1 · You type prompt<br/>TUI / headless -p / ACP] --> B[2 · CLI parse<br/>logan binary + clap]
+  B --> C[3 · Session actor<br/>slash · skills rewrite]
+  C --> D[4 · Build request<br/>ChatState · history · prune ~50%]
+  D --> E[5 · System prompt layers<br/>+ tool schemas]
+  E --> F[6 · Sampler LLM<br/>chat / responses / messages]
+  F --> G{Tool calls?}
+  G -->|yes| H[7 · Tool loop<br/>edit · shell · MCP · skills]
+  H --> F
+  G -->|end_turn| I[8 · Stream + learn<br/>TUI · updates.jsonl]
+  I --> J[Stop hook → MEMORY.md<br/>/flush · self-improve · dream]
+  J --> K[/context · usage · stats ledger/]
 ```
 
-### What goes into the system prompt (step 5)
+```mermaid
+flowchart LR
+  subgraph SystemPrompt["System prompt stack"]
+    L1[Base Logan template]
+    L2[Tool schemas]
+    L3[Skills catalog]
+    L4[AGENTS.md / rules]
+    L5[Memory context]
+    L6[Prefs + lessons]
+    L1 --> L2 --> L3 --> L4 --> L5 --> L6
+  end
+```
 
 | Layer | Content |
 | --- | --- |
@@ -99,10 +89,118 @@ This is the core of Logan. **Every user message follows this path:**
 | 7 | **Preferences + lessons** from long-term MEMORY.md |
 
 There is **no fixed system-prompt length** - it grows with tools, skills, and rules.
-Context window: prune ~50% · auto-compact ~85%.
+Context: prune tool results ~50% · auto-compact ~85%.
 
-Deep dive: [docs/architecture/ARCHITECTURE.md](docs/architecture/ARCHITECTURE.md)  
-Excalidraw: [docs/architecture/01-prompt-lifecycle.excalidraw](docs/architecture/01-prompt-lifecycle.excalidraw)
+Extra visuals (optional): [journey SVG](docs/assets/infographic-prompt-journey.svg) ·
+[journey JPG](docs/assets/infographic-prompt-journey.jpg) ·
+[architecture](docs/architecture/ARCHITECTURE.md)
+
+---
+
+## Tokens, stats, auto-routing, goals, remote agent
+
+**Devs need visibility and control.** Here is what exists vs what Logan is productizing:
+
+| Need | Status | How |
+| --- | --- | --- |
+| **`/goal`** (Claude Code-class) | **Already here** | `/goal …` · `/goal status` · pause/resume/clear · enable with `GROK_GOAL=1` if hidden |
+| **Token / context breakdown** | **Already here** | `/context` · `/session-info` · headless JSON `usage` · OTEL `input/output/cache_read` |
+| **`/usage`** | **Already here** | Credits/billing path |
+| **Local stats rollup** | **Logan scripts** | `examples/scripts/logan-call.sh` → `~/.logan/stats/usage.jsonl` · `usage-rollup.py` |
+| **Smart auto-routing** | **Tiers + skill now** | `examples/config/auto-routing.toml` · `/skill auto-route` · native `--route auto` planned |
+| **LiteLLM** | **Works today** | OpenAI-compat `base_url` → LiteLLM proxy |
+| **Langfuse** | **OTEL path** | `examples/config/observability.toml` → OTLP to Langfuse |
+| **Remote agent for other AIs** | **Works today** | Headless `-p` · `agent stdio` · HTTP wrapper |
+
+Full map: **[docs/FEATURES.md](docs/FEATURES.md)** · Remote: **[docs/REMOTE_AGENT.md](docs/REMOTE_AGENT.md)**
+
+### Auto-routing (save tokens)
+
+```mermaid
+flowchart TD
+  T[Incoming task] --> C{Classify hardness}
+  C -->|trivial Q&A / tiny edit| F[tier-fast<br/>flash · haiku · ollama]
+  C -->|normal implement| D[tier-default<br/>sonnet · gpt]
+  C -->|arch / nasty bug| P[tier-premium<br/>opus · strong model]
+  C -->|offline / private| L[tier-local]
+  F --> R[Run · log usage]
+  D --> R
+  P --> R
+  L --> R
+```
+
+```bash
+# configure tiers
+cat examples/config/auto-routing.toml >> ~/.logan/config.toml
+logan -m tier-fast -p "What does this crate do?"
+logan -m tier-premium -p "Redesign auth for multi-tenant"
+# mid-session: /skill auto-route
+```
+
+### Token visibility
+
+```bash
+# In TUI
+/context          # system / messages / tools / free
+/session-info     # session rollup
+/usage            # credits when applicable
+
+# As another agent (JSON + ledger)
+examples/scripts/logan-call.sh "Run tests and fix failures"
+python3 examples/scripts/usage-rollup.py --by-model
+```
+
+### Logan as a tool for other agents (remote)
+
+**Not impossible - first-class pattern:**
+
+```bash
+# Pattern A: headless
+logan -p "Add tests for parser" --output-format json --always-approve -m tier-default
+
+# Pattern B: ACP stdio (IDE / long-lived)
+logan agent stdio
+
+# Pattern C: HTTP (localhost)
+python3 examples/scripts/logan-agent-server.py --port 8787
+curl -s localhost:8787/v1/run -H 'content-type: application/json' -d '{
+  "prompt": "List top 3 TODOs",
+  "cwd": "/path/to/repo",
+  "model": "tier-default"
+}'
+```
+
+```mermaid
+sequenceDiagram
+  participant Outer as Outer AI agent
+  participant Logan as logan headless / HTTP
+  participant LLM as Model via LiteLLM
+  participant Repo as Workspace tools
+  Outer->>Logan: prompt + cwd + model
+  Logan->>LLM: chat/completions or messages
+  LLM-->>Logan: tool_calls
+  Logan->>Repo: edit / shell / MCP
+  Repo-->>Logan: results
+  Logan->>LLM: tool results loop
+  LLM-->>Logan: final answer + usage
+  Logan-->>Outer: JSON text + usage
+```
+
+### Goals
+
+```text
+/goal Ship /stats token dashboard with cache breakdown
+/goal status
+/goal pause | resume | clear
+```
+
+### LiteLLM + Langfuse
+
+```bash
+# models through LiteLLM
+cat examples/config/observability.toml >> ~/.logan/config.toml
+# OTEL → Langfuse: set OTEL_EXPORTER_OTLP_ENDPOINT + headers (see observability.toml)
+```
 
 ---
 
