@@ -236,6 +236,60 @@ name = "Local Llama"
 temperature = 0.8
 ```
 
+### OpenRouter
+
+One API key for many models:
+
+```toml
+[model.openrouter-auto]
+model = "openrouter/auto"
+base_url = "https://openrouter.ai/api/v1"
+name = "OpenRouter Auto"
+env_key = "OPENROUTER_API_KEY"
+extra_headers = { "HTTP-Referer" = "https://yuv.ai", "X-Title" = "Logan CLI" }
+```
+
+### Google Gemini (OpenAI-compatible API)
+
+```toml
+[model.gemini-flash]
+model = "gemini-2.5-flash"
+base_url = "https://generativelanguage.googleapis.com/v1beta/openai"
+name = "Gemini 2.5 Flash"
+env_key = "GEMINI_API_KEY"
+context_window = 1000000
+```
+
+### LM Studio
+
+```toml
+[model.lmstudio]
+model = "local-model"
+base_url = "http://localhost:1234/v1"
+name = "LM Studio"
+context_window = 32768
+```
+
+### LiteLLM (and AWS Bedrock via LiteLLM)
+
+Logan does not implement native Bedrock SigV4. Point at a [LiteLLM](https://docs.litellm.ai/)
+proxy that routes to Bedrock, Azure, Vertex, etc.:
+
+```toml
+[model.litellm]
+model = "bedrock/anthropic.claude-sonnet-4-20250514-v1:0"
+base_url = "http://localhost:4000/v1"
+name = "LiteLLM / Bedrock"
+env_key = "LITELLM_API_KEY"
+context_window = 200000
+```
+
+### Full preset file
+
+See the Logan repo: [`examples/config/providers.toml`](../../../../../examples/config/providers.toml)
+for copy-paste blocks covering Anthropic, OpenAI, OpenRouter, Gemini, Ollama,
+LM Studio, LiteLLM, and Bedrock-via-proxy.
+
 ---
 
 ## Custom Models Endpoint
