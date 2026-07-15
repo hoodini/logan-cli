@@ -52,8 +52,8 @@ pub enum LogSource {
     #[strum(serialize = "shell")]
     #[serde(rename = "shell")]
     Shell,
-    #[strum(serialize = "grok-pager")]
-    #[serde(rename = "grok-pager")]
+    #[strum(serialize = "logan-pager")]
+    #[serde(rename = "logan-pager")]
     GrokPager,
     #[strum(serialize = "grok-desktop")]
     #[serde(rename = "grok-desktop")]

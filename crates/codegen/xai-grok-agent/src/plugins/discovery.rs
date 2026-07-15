@@ -4,9 +4,9 @@
 //! 1. CLI `--plugin-dir` paths (scope: `CliOverride`)
 //! 2. `.grok/plugins/*/` (scope: `Project`, walked from cwd to worktree root)
 //! 3. `.claude/plugins/*/` (scope: `Project`, compat)
-//! 4. `~/.grok/plugins/*/` (scope: `User`)
+//! 4. `~/.logan/plugins/*/` (scope: `User`)
 //! 5. `~/.claude/plugins/*/` (scope: `User`, compat)
-//!    `~/.grok/installed-plugins/*/` (scope: `User`, marketplace installs)
+//!    `~/.logan/installed-plugins/*/` (scope: `User`, marketplace installs)
 //!    Installed plugins from `~/.claude/plugins/installed_plugins.json` (scope: `User`)
 //! 6. Paths from `[plugins].paths` in config (scope: `ConfigPath`)
 //!
@@ -30,7 +30,7 @@ pub enum PluginScope {
     CliOverride = 0,
     /// `.grok/plugins/` or `.claude/plugins/` in project (requires trust)
     Project = 1,
-    /// `~/.grok/plugins/` or `~/.claude/plugins/` (always trusted)
+    /// `~/.logan/plugins/` or `~/.claude/plugins/` (always trusted)
     User = 2,
     /// `[plugins].paths` in config (trust depends on location)
     ConfigPath = 3,
@@ -72,7 +72,7 @@ pub enum PluginOrigin {
     ProjectGrok,
     /// Project `.claude/plugins/`.
     ProjectClaude,
-    /// `$GROK_HOME/plugins/`.
+    /// `$LOGAN_HOME/plugins/`.
     UserGrok,
     /// `~/.claude/plugins/`.
     UserClaude,
@@ -87,7 +87,7 @@ pub enum PluginOrigin {
         /// Marketplace name from the `name@marketplace` JSON key, when present.
         marketplace: Option<String>,
     },
-    /// Grok's install registry (`~/.grok/installed-plugins`).
+    /// Grok's install registry (`~/.logan/installed-plugins`).
     MarketplaceInstall {
         /// Marketplace source display name (None for direct git/local installs).
         source_name: Option<String>,
@@ -208,11 +208,11 @@ impl DiscoveryConfig {
 
 // ── Discovery entry point ─────────────────────────────────────────────
 
-/// User plugin directories in priority order: `$GROK_HOME/plugins` then
+/// User plugin directories in priority order: `$LOGAN_HOME/plugins` then
 /// `~/.claude/plugins`.
 ///
 /// Unlike agent discovery, plugins are intentionally NOT discovered from a
-/// legacy `~/.grok/plugins`: plugin trust, persisted plugin-data, and install
+/// legacy `~/.logan/plugins`: plugin trust, persisted plugin-data, and install
 /// paths all resolve under `grok_home()`, so a plugin scanned from the legacy
 /// tree would appear untrusted and lose its persisted state. Keeping plugins on
 /// `grok_home()` only avoids that half-initialized state.
@@ -337,7 +337,7 @@ pub fn discover_plugins(
         }
     }
 
-    // 4-5. User plugins: $GROK_HOME/plugins, legacy ~/.grok/plugins, ~/.claude/plugins.
+    // 4-5. User plugins: $LOGAN_HOME/plugins, legacy ~/.logan/plugins, ~/.claude/plugins.
     // Gate the grok plugins dir on user_grok_home() so a project's .grok/plugins
     // is never scanned as user-global when no home resolves.
     let grok = xai_grok_config::user_grok_home();
@@ -487,7 +487,7 @@ pub fn discover_plugins(
 
 // ── Internal helpers ──────────────────────────────────────────────────
 
-/// Scan a plugins parent directory (e.g. `~/.grok/plugins/`) and collect
+/// Scan a plugins parent directory (e.g. `~/.logan/plugins/`) and collect
 /// each subdirectory as a plugin candidate.
 fn scan_plugin_dir(
     plugins_dir: &Path,
@@ -918,11 +918,11 @@ mod tests {
             home.join(".claude").join("plugins"),
             PluginOrigin::UserClaude
         )));
-        // Plugins are not discovered from the legacy ~/.grok tree.
+        // Plugins are not discovered from the legacy ~/.logan tree.
         assert!(
             !dirs
                 .iter()
-                .any(|(p, _)| p == &home.join(".grok").join("plugins"))
+                .any(|(p, _)| p == &home.join(".logan").join("plugins"))
         );
     }
 
@@ -959,7 +959,7 @@ mod tests {
     #[test]
     fn project_plugins_dir_origin_distinguishes_grok_and_claude() {
         assert_eq!(
-            project_plugins_dir_origin(Path::new("/repo/.grok/plugins")),
+            project_plugins_dir_origin(Path::new("/repo/.logan/plugins")),
             PluginOrigin::ProjectGrok
         );
         assert_eq!(
@@ -972,8 +972,8 @@ mod tests {
     fn discover_user_plugins() {
         let tmp = tempfile::tempdir().unwrap();
 
-        // Create ~/.grok/plugins/ structure
-        let grok_plugins = tmp.path().join(".grok").join("plugins");
+        // Create ~/.logan/plugins/ structure
+        let grok_plugins = tmp.path().join(".logan").join("plugins");
         std::fs::create_dir_all(&grok_plugins).unwrap();
         make_manifest_plugin(&grok_plugins, "user-tool");
 
@@ -1399,7 +1399,7 @@ mod tests {
     fn plugin_id_format() {
         let id = PluginId::new(
             PluginScope::User,
-            Path::new("/home/user/.grok/plugins/my-plugin"),
+            Path::new("/home/user/.logan/plugins/my-plugin"),
             "my-plugin",
         );
         assert!(id.0.starts_with("user/"));
@@ -1547,7 +1547,7 @@ mod tests {
         // (project_trusted) allows it. Found by name so any user-scoped plugins
         // on the test host are irrelevant.
         let tmp = tempfile::tempdir().unwrap();
-        let plugin_dir = tmp.path().join(".grok").join("plugins").join("proj-mcp");
+        let plugin_dir = tmp.path().join(".logan").join("plugins").join("proj-mcp");
         std::fs::create_dir_all(&plugin_dir).unwrap();
         std::fs::write(plugin_dir.join("plugin.json"), r#"{"name": "proj-mcp"}"#).unwrap();
         std::fs::write(plugin_dir.join(".mcp.json"), r#"{"mcpServers":{}}"#).unwrap();

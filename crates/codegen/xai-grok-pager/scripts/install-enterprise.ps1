@@ -4,13 +4,13 @@
 # Standalone installer for the enterprise channel. Intentionally a full copy of
 # the install logic so changes to the stable installer cannot break enterprise.
 #
-# Auth: GROK_DEPLOYMENT_KEY env var (takes precedence) or ~/.grok/auth.json from `grok login`.
+# Auth: GROK_DEPLOYMENT_KEY env var (takes precedence) or ~/.logan/auth.json from `grok login`.
 # Env: GROK_BIN_DIR, GROK_PROXY_URL
 #
 # Usage:
 #   irm https://x.ai/cli/enterprise-install.ps1 | iex                                       # latest enterprise
 #   & ([scriptblock]::Create((irm https://x.ai/cli/enterprise-install.ps1))) -Version 0.1.42 # specific version
-#   $env:GROK_VERSION="0.1.42"; irm https://x.ai/cli/enterprise-install.ps1 | iex           # specific version (alt)
+#   $env:LOGAN_VERSION="0.1.42"; irm https://x.ai/cli/enterprise-install.ps1 | iex           # specific version (alt)
 #   $env:GROK_DEPLOYMENT_KEY="<key>"; irm https://x.ai/cli/enterprise-install.ps1 | iex
 #
 
@@ -28,8 +28,8 @@ $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
 
 # Accept version from environment variable (useful with irm | iex).
-if (-not $Version -and $env:GROK_VERSION) {
-    $Version = $env:GROK_VERSION
+if (-not $Version -and $env:LOGAN_VERSION) {
+    $Version = $env:LOGAN_VERSION
 }
 
 # This script is Windows-only. PS 5.1 has no Platform property and only runs on Windows.
@@ -38,7 +38,7 @@ if ($PSVersionTable.Platform -and $PSVersionTable.Platform -ne 'Win32NT') {
     exit 1
 }
 
-$GrokDir = Join-Path $env:USERPROFILE '.grok'
+$GrokDir = Join-Path $env:USERPROFILE '.logan'
 
 # --- Helpers ---
 
@@ -125,10 +125,10 @@ if ($env:GROK_DEPLOYMENT_KEY) {
     $legacyToken = Read-GrokToken $LegacyScope
     if ($oidcToken) {
         $AuthSource = 'auth.json (oidc)'
-        Write-Host 'Auth: using OIDC token from ~/.grok/auth.json.' -ForegroundColor DarkGray
+        Write-Host 'Auth: using OIDC token from ~/.logan/auth.json.' -ForegroundColor DarkGray
     } elseif ($legacyToken) {
         $AuthSource = 'auth.json (legacy)'
-        Write-Host 'Auth: using legacy token from ~/.grok/auth.json.' -ForegroundColor DarkGray
+        Write-Host 'Auth: using legacy token from ~/.logan/auth.json.' -ForegroundColor DarkGray
     }
 }
 

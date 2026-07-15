@@ -4,8 +4,7 @@ name = "xai-file-utils"
 version = "0.1.0"
 edition.workspace = true
 description = "Local data collection: per-turn event tracking"
-authors = ["xAI"]
-
+authors = ["Yuval Avidani <https://yuv.ai> (YUV.AI)"]
 [dependencies]
 anyhow = { workspace = true }
 base64.workspace = true

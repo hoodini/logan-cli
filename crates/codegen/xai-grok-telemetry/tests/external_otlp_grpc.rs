@@ -48,7 +48,7 @@ fn external_stream_grpc_end_to_end() {
     });
     xai_grok_telemetry::log_event(xai_grok_telemetry::events::SessionHarness {
         session_id: "sess-grpc-1".into(),
-        client_identifier: Some("grok-pager".into()),
+        client_identifier: Some("logan-pager".into()),
         model_id: "grok-4".into(),
         agent_name: "grok-build-plan".into(),
         permission_mode: xai_grok_telemetry::enums::PermissionMode::Ask,

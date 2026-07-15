@@ -1,19 +1,25 @@
 # Contributing
 
-This repository does **not** accept external pull requests or unsolicited
-patches.
+This repository is **Logan**, authored by **Yuval Avidani (YUV.AI)** -
+AI Builder & Speaker.
 
-SpaceXAI develops this software internally. The public tree is published for
-source transparency and local builds under the terms of the Apache License,
-Version 2.0 (see [`LICENSE`](LICENSE)).
+- Web: https://yuv.ai
+- GitHub: https://github.com/hoodini
+- X: https://x.com/yuvalav
+
+It is a fork of [xAI Grok Build](https://github.com/xai-org/grok-build)
+(Apache-2.0). Upstream (xAI) does not accept external contributions to Grok
+Build. This fork is independent; contribution policy for Logan is owned by
+Yuval Avidani / YUV.AI.
 
 ## Security reports
 
-Please report security issues through the process described in
-[`SECURITY.md`](SECURITY.md). Do not open a public issue for vulnerabilities.
+Please report security issues privately to the maintainer (Yuval Avidani).
+Do not open a public issue for vulnerabilities until coordinated disclosure
+is agreed. Do not report fork-specific issues to xAI.
 
-## Licensing of this source
+## Licensing
 
-By downloading or using this source, you agree that your use is governed by
-the Apache License, Version 2.0. No contributor license agreement is offered
-because external contributions are not accepted.
+By contributing, you agree that your contributions are licensed under the
+Apache License, Version 2.0 (see [`LICENSE`](LICENSE)) and may be attributed
+to the Logan project maintained by Yuval Avidani (YUV.AI).

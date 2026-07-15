@@ -233,7 +233,7 @@ fn event_names_are_pinned() {
 #[test]
 fn client_identifier_allowlist_is_pinned() {
     let expected: &[&str] = &[
-        "grok-pager",
+        "logan-pager",
         "grok-tui",
         "grok-shell",
         "grok-web",
@@ -244,8 +244,8 @@ fn client_identifier_allowlist_is_pinned() {
     ];
     assert_eq!(schema::KNOWN_CLIENT_IDENTIFIERS, expected);
     assert_eq!(
-        schema::sanitize_client_identifier("grok-pager"),
-        "grok-pager"
+        schema::sanitize_client_identifier("logan-pager"),
+        "logan-pager"
     );
     assert_eq!(
         schema::sanitize_client_identifier("Evil Corp Internal Tool v2"),
@@ -302,7 +302,7 @@ fn file_extension_reduction() {
 fn sentinel_session_harness() -> events::SessionHarness {
     events::SessionHarness {
         session_id: "sess-1".into(),
-        client_identifier: Some("grok-pager".into()),
+        client_identifier: Some("logan-pager".into()),
         model_id: "grok-4".into(),
         agent_name: "grok-build-plan".into(),
         permission_mode: crate::enums::PermissionMode::Ask,

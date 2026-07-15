@@ -69,7 +69,7 @@ pub struct OtelExporterConfig {
 /// Creates an OpenTelemetry layer that bridges tracing spans to OpenTelemetry.
 /// This enables trace context propagation and OTLP export to the cli-chat-proxy.
 ///
-/// - `client_name`: binary name (e.g. `"grok-tui"`, `"grok-pager"`) -- stored as
+/// - `client_name`: binary name (e.g. `"grok-tui"`, `"logan-pager"`) -- stored as
 ///   `client.name` resource attribute for dashboards to distinguish client types.
 /// - `client_version`: `CARGO_PKG_VERSION` -- sent in the `x-grok-client-version` header.
 /// - `service_version`: `VERSION_WITH_COMMIT` -- stored as `service.version` resource attribute.

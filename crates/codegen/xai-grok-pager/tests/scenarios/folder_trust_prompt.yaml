@@ -15,7 +15,7 @@ environment:
       value: "1"
     # A self-built (unstamped) grok auto-trusts and never prompts; simulate a
     # release build so the folder-trust prompt is actually evaluated.
-    - key: GROK_TEST_VERSION
+    - key: LOGAN_TEST_VERSION
       value: "0.0.0-sim"
 workspace:
   git_init: true

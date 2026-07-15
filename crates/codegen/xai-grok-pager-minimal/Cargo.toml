@@ -3,8 +3,7 @@ name = "xai-grok-pager-minimal"
 version = "0.1.0"
 edition.workspace = true
 license = "Apache-2.0"
-authors = ["xAI"]
-
+authors = ["Yuval Avidani <https://yuv.ai> (YUV.AI)"]
 # `xai-ratatui-inline` is reached only through the pager's re-exported
 # `PagerTerminal` type (its `insert_before` / viewport methods), so this crate
 # never names the crate in code — only in intra-doc links. cargo-shear can't see

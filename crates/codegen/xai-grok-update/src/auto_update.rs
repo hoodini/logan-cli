@@ -66,7 +66,7 @@ pub fn print_update_status(status: &UpdateStatus, json: bool) -> anyhow::Result<
 
     if let Some(error) = status.error.as_deref() {
         println!(
-            "Grok Build - v{} [{}]",
+            "Logan - v{} [{}]",
             status.current_version, status.channel
         );
         println!("Update check failed: {error}");
@@ -78,24 +78,24 @@ pub fn print_update_status(status: &UpdateStatus, json: bool) -> anyhow::Result<
     if status.update_available {
         if let Some(latest_version) = status.latest_version.as_deref() {
             println!(
-                "A new version of Grok Build is available: {} -> {}{}",
+                "A new version of Logan is available: {} -> {}{}",
                 status.current_version, latest_version, channel_label
             );
         } else {
-            println!("A new version of Grok Build is available.");
+            println!("A new version of Logan is available.");
         }
         return Ok(());
     }
 
     if let Some(latest_version) = status.latest_version.as_deref() {
         println!(
-            "Grok Build - v{} (latest: {}){}",
+            "Logan - v{} (latest: {}){}",
             status.current_version, latest_version, channel_label
         );
         return Ok(());
     }
 
-    println!("Grok Build - v{}{}", status.current_version, channel_label);
+    println!("Logan - v{}{}", status.current_version, channel_label);
     Ok(())
 }
 
@@ -254,7 +254,7 @@ pub async fn ensure_latest_on_disk(update_config: &UpdateConfig) -> Result<Ensur
 }
 
 /// Disk-version probe gated on the installer actually maintaining the
-/// managed `~/.grok/bin/grok` symlink.
+/// managed `~/.logan/bin/logan` symlink.
 ///
 /// Only the internal (install.sh / CDN) and gh-release installers write that
 /// symlink. npm manages its own global install, so for npm a symlink left
@@ -523,7 +523,7 @@ pub async fn run_update_if_available(
     let channel_label = format!(" [{}]", update_config.channel);
     if auto_update {
         eprintln!(
-            "A new version of Grok Build is available: {} -> {}{}",
+            "A new version of Logan is available: {} -> {}{}",
             current_version, latest_version, channel_label
         );
         if interactive {
@@ -551,7 +551,7 @@ pub async fn run_update_if_available(
             return Ok(false);
         }
         eprintln!(
-            "A new version of Grok Build is available: {} -> {}{}",
+            "A new version of Logan is available: {} -> {}{}",
             current_version, latest_version, channel_label
         );
         if interactive {
@@ -638,7 +638,7 @@ async fn run_update_subcommand(run_mode: UpdateRunMode) -> Result<Option<tokio::
 ///
 /// `current_exe()` resolves symlinks via `/proc/self/exe` (see proc(5)),
 /// so it returns the old versioned target after a symlink swap.
-/// Prefer `~/.grok/bin/grok` which always points to the latest version.
+/// Prefer `~/.logan/bin/logan` which always points to the latest version.
 fn resolve_restart_exe() -> Result<std::path::PathBuf> {
     let canonical = grok_application();
     if canonical.exists() {
@@ -748,8 +748,8 @@ const DOWNLOAD_REQUEST_TIMEOUT: Duration = Duration::from_secs(20 * 60);
 ///
 /// Appends `.{pid}-{seq}.tmp` to the FULL file name instead of using
 /// `Path::with_extension`, which treats everything after the last dot of the
-/// versioned name as the extension (`grok-0.1.181-linux-x86_64` →
-/// `grok-0.1.tmp`) and therefore collides for every `0.1.x` version. The PID
+/// versioned name as the extension (`logan-0.1.181-linux-x86_64` →
+/// `logan-0.1.tmp`) and therefore collides for every `0.1.x` version. The PID
 /// plus a per-process counter makes the name unique per download attempt —
 /// across processes (two updaters racing in the same instant, the accepted
 /// lock-free residual race) and within one process — so no racer can ever
@@ -760,7 +760,7 @@ fn tmp_download_path(dest: &std::path::Path) -> std::path::PathBuf {
 }
 
 /// Unique temp path `<base>.{pid}-{seq}.{ext}`, appended to the full name so a
-/// versioned base like `grok-0.1.181` doesn't collide via `with_extension`.
+/// versioned base like `logan-0.1.181` doesn't collide via `with_extension`.
 /// PID + per-process counter keep racing updaters from clobbering each other.
 fn unique_temp_sibling(base: &std::path::Path, ext: &str) -> std::path::PathBuf {
     use std::sync::atomic::{AtomicU64, Ordering};
@@ -1029,7 +1029,7 @@ pub async fn download_silent(url: &str, dest: &std::path::Path) -> Result<()> {
     Ok(())
 }
 
-/// Delete `~/.grok/models_cache.json` after a successful update.
+/// Delete `~/.logan/models_cache.json` after a successful update.
 ///
 /// The cache embeds the binary version and will be treated as a miss by the
 /// new binary anyway, but removing it eagerly avoids a wasted disk read +
@@ -1043,13 +1043,13 @@ async fn remove_stale_models_cache() {
     }
 }
 
-/// Remove the stale `grok-pager` symlink/binary from `~/.grok/bin/` left by
+/// Remove the stale `grok-pager` symlink/binary from `~/.logan/bin/` left by
 /// older installations that shipped a separate pager binary.
 async fn remove_stale_pager(bin_dir: &std::path::Path) {
     let name = if cfg!(windows) {
         "grok-pager.exe"
     } else {
-        "grok-pager"
+        "logan-pager"
     };
     let link = bin_dir.join(name);
     if link.exists() || link.is_symlink() {
@@ -1145,8 +1145,8 @@ async fn smoke_test_binary(binary_path: &std::path::Path) -> bool {
 
 /// Test-only entry point: same as [`install_internal`] but reads from
 /// `gcs_base_url` instead of the hardcoded GCS bucket. Persists installer
-/// config and writes to `~/.grok/bin/`, so callers must isolate
-/// `GROK_HOME`.
+/// config and writes to `~/.logan/bin/`, so callers must isolate
+/// `LOGAN_HOME`.
 #[doc(hidden)]
 pub async fn install_internal_from_base(
     target: Option<&str>,
@@ -1157,7 +1157,7 @@ pub async fn install_internal_from_base(
     activate_verified_download(&download).await
 }
 
-/// A downloaded and smoke-tested binary in `~/.grok/downloads/`, not yet
+/// A downloaded and smoke-tested binary in `~/.logan/downloads/`, not yet
 /// activated as the managed `grok`/`agent`.
 struct VerifiedDownload {
     version: String,
@@ -1227,7 +1227,7 @@ async fn activate_verified_download(download: &VerifiedDownload) -> Result<()> {
     let bin_dir = grok_home.join("bin");
     tokio::fs::create_dir_all(&bin_dir).await?;
 
-    // Atomic swap of ~/.grok/bin/{grok,agent} -> downloaded binary.
+    // Atomic swap of ~/.logan/bin/{grok,agent} -> downloaded binary.
     let link_path = swap_managed_bin_links(&download.binary_path, &bin_dir).await?;
 
     remove_stale_pager(&bin_dir).await;
@@ -1235,8 +1235,8 @@ async fn activate_verified_download(download: &VerifiedDownload) -> Result<()> {
     eprintln!();
 
     // Clean up old versioned binaries (keeps current + 1 previous).
-    cleanup_old_downloads(&download_dir, "grok", &download.version).await;
-    cleanup_old_downloads(&download_dir, "grok-pager", &download.version).await;
+    cleanup_old_downloads(&download_dir, "logan", &download.version).await;
+    cleanup_old_downloads(&download_dir, "logan-pager", &download.version).await;
 
     // Persist installer to config.toml so future runs auto-detect internal.
     let _ = config::update_config(|st| {
@@ -1258,7 +1258,7 @@ async fn activate_verified_download(download: &VerifiedDownload) -> Result<()> {
 /// Failures are silently ignored — completions are a nice-to-have, not a
 /// requirement for a successful update.
 async fn regenerate_completions(binary: &std::path::Path, grok_home: &std::path::Path) {
-    // Derive $HOME independently — grok_home may be overridden via GROK_HOME
+    // Derive $HOME independently — grok_home may be overridden via LOGAN_HOME
     // env var, so grok_home.parent() isn't necessarily the user's home dir.
     #[allow(deprecated)]
     let user_home = std::env::home_dir().unwrap_or_default();
@@ -1290,13 +1290,13 @@ async fn regenerate_completions(binary: &std::path::Path, grok_home: &std::path:
 
 /// Compute a relative symlink target from `link` to `target`.
 ///
-/// When both paths share a grandparent (e.g. `~/.grok/bin/grok` and
-/// `~/.grok/downloads/grok-0.1.203-linux-x86_64`), returns a relative path
-/// like `../downloads/grok-0.1.203-linux-x86_64`.  When they share the same
+/// When both paths share a grandparent (e.g. `~/.logan/bin/logan` and
+/// `~/.logan/downloads/logan-0.1.203-linux-x86_64`), returns a relative path
+/// like `../downloads/logan-0.1.203-linux-x86_64`.  When they share the same
 /// parent directory, returns just the filename.  Falls back to the absolute
 /// `target` path for any other layout.
 ///
-/// Relative symlinks survive Docker bind-mounts where `~/.grok/` is mapped
+/// Relative symlinks survive Docker bind-mounts where `~/.logan/` is mapped
 /// into a container with a different `$HOME` (and thus a different absolute
 /// prefix).
 #[cfg(unix)]
@@ -1304,7 +1304,7 @@ fn relative_symlink_target(target: &std::path::Path, link: &std::path::Path) -> 
     let (Some(target_parent), Some(link_parent)) = (target.parent(), link.parent()) else {
         return target.to_path_buf();
     };
-    // Same directory — just the filename (e.g. grok-latest -> grok-0.1.203-…)
+    // Same directory — just the filename (e.g. logan-latest -> logan-0.1.203-…)
     if target_parent == link_parent
         && let Some(name) = target.file_name()
     {
@@ -1320,7 +1320,7 @@ fn relative_symlink_target(target: &std::path::Path, link: &std::path::Path) -> 
     target.to_path_buf()
 }
 
-/// Swap `~/.grok/bin/{grok,agent}` to point at `binary_path`. Returns the
+/// Swap `~/.logan/bin/{grok,agent}` to point at `binary_path`. Returns the
 /// `grok` link path (for [`regenerate_completions`]).
 ///
 /// `grok` and `agent` are first-class entry points that the bootstrap
@@ -1329,7 +1329,7 @@ fn relative_symlink_target(target: &std::path::Path, link: &std::path::Path) -> 
 /// leaves `agent` pinned at the previous version.
 ///
 /// Unix: atomic symlink swap with relative target (survives Docker
-/// bind-mounts of `~/.grok/`). Windows: [`windows_replace_exe`].
+/// bind-mounts of `~/.logan/`). Windows: [`windows_replace_exe`].
 ///
 /// **All-or-nothing.** Each link's prior state is captured (Unix: prior
 /// symlink target; Windows: `.rollback.bak`; or `Absent` marker via
@@ -1342,7 +1342,7 @@ async fn swap_managed_bin_links(
     binary_path: &std::path::Path,
     bin_dir: &std::path::Path,
 ) -> Result<std::path::PathBuf> {
-    let grok_name = if cfg!(windows) { "grok.exe" } else { "grok" };
+    let grok_name = if cfg!(windows) { "logan.exe" } else { "logan" };
     let agent_name = if cfg!(windows) { "agent.exe" } else { "agent" };
     let grok_link = bin_dir.join(grok_name);
     let agent_link = bin_dir.join(agent_name);
@@ -1741,9 +1741,9 @@ async fn sweep_old_exe_backups(old: &std::path::Path) {
 /// and hasn't fully loaded all pages yet — deleting it on macOS causes SIGKILL
 /// because the kernel can no longer verify the code signature).
 ///
-/// `bin_prefix` is the binary name prefix, e.g. `"grok"` or `"grok-pager"`.
+/// `bin_prefix` is the binary name prefix, e.g. `"logan"` or `"logan-pager"`.
 /// Files must match `{bin_prefix}-{digit}*` to be considered versioned binaries
-/// (this avoids `grok-*` matching `grok-pager-*` or `grok-latest`).
+/// (this avoids `grok-*` matching `grok-pager-*` or `logan-latest`).
 ///
 /// Temporary/partial files (containing `.tmp`) are deleted only once they
 /// are **stale** (mtime older than [`STALE_TMP_AGE`]). A fresh `.tmp` may be
@@ -1801,21 +1801,21 @@ async fn cleanup_old_downloads(dir: &std::path::Path, bin_prefix: &str, current_
             }
             continue;
         }
-        // Skip symlinks (e.g. grok-latest).
+        // Skip symlinks (e.g. logan-latest).
         if let Ok(ft) = entry.file_type().await
             && ft.is_symlink()
         {
             continue;
         }
         // The suffix after the prefix must start with a digit to be a versioned
-        // binary (avoids `grok-latest`, `grok-pager-*` when prefix is `grok`).
+        // binary (avoids `logan-latest`, `grok-pager-*` when prefix is `grok`).
         let suffix = &name[prefix.len()..];
         if !suffix.starts_with(|c: char| c.is_ascii_digit()) {
             continue;
         }
         // Extract the version portion via the shared parser (handles the
-        // internal `grok-0.1.150-macos-aarch64`, pre-release, and npm
-        // `grok-0.1.150` layouts — see `version_from_versioned_binary_name`).
+        // internal `logan-0.1.150-macos-aarch64`, pre-release, and npm
+        // `logan-0.1.150` layouts — see `version_from_versioned_binary_name`).
         let Some(ver_str) = crate::version::version_from_versioned_binary_name(&name, bin_prefix)
         else {
             continue;
@@ -1939,30 +1939,30 @@ async fn install_gh_release(target: Option<&str>) -> Result<()> {
         tokio::fs::set_permissions(&binary_path, std::fs::Permissions::from_mode(0o755)).await?;
     }
 
-    // Atomic swap of ~/.grok/bin/{grok,agent} -> downloaded binary.
+    // Atomic swap of ~/.logan/bin/{grok,agent} -> downloaded binary.
     swap_managed_bin_links(&binary_path, &bin_dir).await?;
 
-    // Update grok-latest -> versioned binary so any existing symlinks that route
-    // through it (e.g. /usr/local/bin/grok -> ~/.grok/downloads/grok-latest)
+    // Update logan-latest -> versioned binary so any existing symlinks that route
+    // through it (e.g. /usr/local/bin/logan -> ~/.logan/downloads/logan-latest)
     // resolve to the newly installed version.
     #[cfg(unix)]
     {
-        let latest_path = download_dir.join("grok-latest");
+        let latest_path = download_dir.join("logan-latest");
         let rel_target = relative_symlink_target(&binary_path, &latest_path);
         if let Err(e) = atomic_symlink_swap(&rel_target, &latest_path).await {
-            tracing::warn!("Failed to update grok-latest symlink: {e}");
+            tracing::warn!("Failed to update logan-latest symlink: {e}");
         }
     }
 
     // Also update /usr/local/bin/{grok,agent} if either points directly into
-    // ~/.grok/downloads/ (legacy layout — skips the grok-latest indirection).
+    // ~/.logan/downloads/ (legacy layout — skips the logan-latest indirection).
     // Permission errors ignored.
     #[cfg(unix)]
-    for name in ["grok", "agent"] {
+    for name in ["logan", "agent"] {
         let system_link = std::path::PathBuf::from(format!("/usr/local/bin/{name}"));
         if let Ok(existing_target) = tokio::fs::read_link(&system_link).await {
             let target_str = existing_target.to_string_lossy();
-            if target_str.contains(".grok/downloads/") && !target_str.ends_with("grok-latest") {
+            if target_str.contains(".grok/downloads/") && !target_str.ends_with("logan-latest") {
                 // Try to update; ignore permission errors
                 let _ = atomic_symlink_swap(&binary_path, &system_link).await;
             }
@@ -1974,8 +1974,8 @@ async fn install_gh_release(target: Option<&str>) -> Result<()> {
     eprintln!();
 
     // Clean up old versioned binaries (keeps current + 1 previous).
-    cleanup_old_downloads(&download_dir, "grok", &version).await;
-    cleanup_old_downloads(&download_dir, "grok-pager", &version).await;
+    cleanup_old_downloads(&download_dir, "logan", &version).await;
+    cleanup_old_downloads(&download_dir, "logan-pager", &version).await;
 
     // Persist installer to config.toml so future runs auto-detect gh-release.
     let _ = config::update_config(|st| {
@@ -2023,14 +2023,14 @@ fn create_temp_npmrc(npm_registry: Option<&str>) -> Result<Option<std::path::Pat
 /// the code signature of the mmap'd executable pages once the backing file
 /// inode is unlinked.
 ///
-/// While our postinstall.js now uses versioned binaries under ~/.grok/bin/
+/// While our postinstall.js now uses versioned binaries under ~/.logan/bin/
 /// (so processes launched from there are safe), older installations or npx
 /// invocations may still be running the vendored binary directly.
 #[cfg(target_os = "macos")]
 fn warn_if_other_grok_processes_running() {
     let my_pid = std::process::id().to_string();
     let mut cmd = Command::new("pgrep");
-    cmd.args(["-f", "grok"])
+    cmd.args(["-f", "logan"])
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
         .stderr(Stdio::null());
@@ -2360,11 +2360,11 @@ mod tests {
     #[test]
     fn test_tmp_download_path_is_unique_per_version_and_per_attempt() {
         // The old `with_extension("tmp")` collapsed every 0.1.x versioned
-        // name onto a single `grok-0.1.tmp`; the helper must keep distinct
+        // name onto a single `logan-0.1.tmp`; the helper must keep distinct
         // versions distinct AND make repeated attempts (same process, e.g.
         // concurrent tokio tasks) unique.
-        let dest_181 = std::path::Path::new("/home/u/.grok/downloads/grok-0.1.181-linux-x86_64");
-        let dest_182 = std::path::Path::new("/home/u/.grok/downloads/grok-0.1.182-linux-x86_64");
+        let dest_181 = std::path::Path::new("/home/u/.logan/downloads/logan-0.1.181-linux-x86_64");
+        let dest_182 = std::path::Path::new("/home/u/.logan/downloads/logan-0.1.182-linux-x86_64");
 
         let a = tmp_download_path(dest_181);
         let b = tmp_download_path(dest_182);
@@ -2378,7 +2378,7 @@ mod tests {
 
         let name = a.file_name().unwrap().to_string_lossy().to_string();
         assert!(
-            name.starts_with("grok-0.1.181-linux-x86_64."),
+            name.starts_with("logan-0.1.181-linux-x86_64."),
             "full versioned name must be preserved: {name}"
         );
         assert!(
@@ -2387,7 +2387,7 @@ mod tests {
         );
         assert_eq!(
             a.parent(),
-            std::path::Path::new("/home/u/.grok/downloads").into(),
+            std::path::Path::new("/home/u/.logan/downloads").into(),
             "temp file must stay in the destination directory for atomic rename"
         );
     }
@@ -2451,7 +2451,7 @@ mod tests {
         let target = dir.path().join("binary-v1");
         std::fs::write(&target, "v1").unwrap();
 
-        let link = dir.path().join("grok");
+        let link = dir.path().join("logan");
         // No existing symlink — should create one.
         atomic_symlink_swap(&target, &link).await.unwrap();
 
@@ -2470,7 +2470,7 @@ mod tests {
         let target_v2 = dir.path().join("binary-v2");
         std::fs::write(&target_v2, "v2").unwrap();
 
-        let link = dir.path().join("grok");
+        let link = dir.path().join("logan");
         // Set up initial symlink to v1.
         std::os::unix::fs::symlink(&target_v1, &link).unwrap();
         assert_eq!(std::fs::read_to_string(&link).unwrap(), "v1");
@@ -2493,7 +2493,7 @@ mod tests {
         let target_v2 = dir.path().join("binary-v2");
         std::fs::write(&target_v2, "v2-content").unwrap();
 
-        let link = dir.path().join("grok");
+        let link = dir.path().join("logan");
         std::os::unix::fs::symlink(&target_v1, &link).unwrap();
 
         // Swap to v2.
@@ -2519,7 +2519,7 @@ mod tests {
         let target_v2 = dir.path().join("binary-v2");
         std::fs::write(&target_v2, "v2").unwrap();
 
-        let link = dir.path().join("grok");
+        let link = dir.path().join("logan");
         std::os::unix::fs::symlink(&target_v1, &link).unwrap();
         assert!(link.exists(), "link should exist before swap");
 
@@ -2541,7 +2541,7 @@ mod tests {
         let target = dir.path().join("binary-v2");
         std::fs::write(&target, "v2").unwrap();
 
-        let link = dir.path().join("grok");
+        let link = dir.path().join("logan");
         // Simulate an old installation where grok is a regular file.
         std::fs::write(&link, "old-binary").unwrap();
 
@@ -2563,7 +2563,7 @@ mod tests {
         let target_v2 = dir.path().join("binary-v2");
         std::fs::write(&target_v2, "v2").unwrap();
 
-        let link = dir.path().join("grok");
+        let link = dir.path().join("logan");
         std::os::unix::fs::symlink(&target_v1, &link).unwrap();
         std::os::unix::fs::symlink(&target_v1, link.with_extension("tmp-link")).unwrap();
 
@@ -2578,7 +2578,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let target = dir.path().join("binary-v1");
         std::fs::write(&target, "v1").unwrap();
-        let link = dir.path().join("grok");
+        let link = dir.path().join("logan");
         std::os::unix::fs::symlink(&target, &link).unwrap();
 
         // Old- and new-style leftover temp links.
@@ -2606,7 +2606,7 @@ mod tests {
     async fn test_atomic_symlink_swap_multiple_sequential_swaps() {
         // Simulate v1 -> v2 -> v3 -> v4 sequential swaps.
         let dir = tempfile::tempdir().unwrap();
-        let link = dir.path().join("grok");
+        let link = dir.path().join("logan");
 
         for i in 1..=4 {
             let target = dir.path().join(format!("binary-v{}", i));
@@ -2638,10 +2638,10 @@ mod tests {
         // readlink returns the absolute path.
         let dir = tempfile::tempdir().unwrap();
 
-        let binary = dir.path().join("grok-0.1.141");
+        let binary = dir.path().join("logan-0.1.141");
         std::fs::write(&binary, "v141").unwrap();
 
-        let link = dir.path().join("grok");
+        let link = dir.path().join("logan");
         atomic_symlink_swap(&binary, &link).await.unwrap();
 
         assert!(link.is_symlink());
@@ -2660,16 +2660,16 @@ mod tests {
         std::fs::create_dir_all(&downloads).unwrap();
         std::fs::create_dir_all(&bin).unwrap();
 
-        std::fs::write(downloads.join("grok-0.1.203"), "v203").unwrap();
+        std::fs::write(downloads.join("logan-0.1.203"), "v203").unwrap();
 
-        let rel_target = std::path::Path::new("../downloads/grok-0.1.203");
-        let link = bin.join("grok");
+        let rel_target = std::path::Path::new("../downloads/logan-0.1.203");
+        let link = bin.join("logan");
         atomic_symlink_swap(rel_target, &link).await.unwrap();
 
         assert!(link.is_symlink());
         assert_eq!(
             std::fs::read_link(&link).unwrap(),
-            std::path::PathBuf::from("../downloads/grok-0.1.203")
+            std::path::PathBuf::from("../downloads/logan-0.1.203")
         );
         assert_eq!(std::fs::read_to_string(&link).unwrap(), "v203");
     }
@@ -2677,58 +2677,58 @@ mod tests {
     #[cfg(unix)]
     #[test]
     fn test_relative_symlink_target_sibling_dirs() {
-        // bin/grok -> ../downloads/grok-0.1.203
-        let target = std::path::Path::new("/home/alice/.grok/downloads/grok-0.1.203");
-        let link = std::path::Path::new("/home/alice/.grok/bin/grok");
+        // bin/grok -> ../downloads/logan-0.1.203
+        let target = std::path::Path::new("/home/alice/.logan/downloads/logan-0.1.203");
+        let link = std::path::Path::new("/home/alice/.logan/bin/logan");
         let result = relative_symlink_target(target, link);
         assert_eq!(
             result,
-            std::path::PathBuf::from("../downloads/grok-0.1.203")
+            std::path::PathBuf::from("../downloads/logan-0.1.203")
         );
     }
 
     #[cfg(unix)]
     #[test]
     fn test_relative_symlink_target_same_dir() {
-        // downloads/grok-latest -> grok-0.1.203 (same directory)
-        let target = std::path::Path::new("/home/alice/.grok/downloads/grok-0.1.203");
-        let link = std::path::Path::new("/home/alice/.grok/downloads/grok-latest");
+        // downloads/logan-latest -> logan-0.1.203 (same directory)
+        let target = std::path::Path::new("/home/alice/.logan/downloads/logan-0.1.203");
+        let link = std::path::Path::new("/home/alice/.logan/downloads/logan-latest");
         let result = relative_symlink_target(target, link);
-        assert_eq!(result, std::path::PathBuf::from("grok-0.1.203"));
+        assert_eq!(result, std::path::PathBuf::from("logan-0.1.203"));
     }
 
     #[cfg(unix)]
     #[test]
     fn test_relative_symlink_target_cross_tree_stays_absolute() {
-        // /usr/local/bin/grok -> /home/alice/.grok/downloads/grok-0.1.203
+        // /usr/local/bin/logan -> /home/alice/.logan/downloads/logan-0.1.203
         // Different grandparents — should stay absolute.
-        let target = std::path::Path::new("/home/alice/.grok/downloads/grok-0.1.203");
-        let link = std::path::Path::new("/usr/local/bin/grok");
+        let target = std::path::Path::new("/home/alice/.logan/downloads/logan-0.1.203");
+        let link = std::path::Path::new("/usr/local/bin/logan");
         let result = relative_symlink_target(target, link);
         assert_eq!(
             result,
-            std::path::PathBuf::from("/home/alice/.grok/downloads/grok-0.1.203")
+            std::path::PathBuf::from("/home/alice/.logan/downloads/logan-0.1.203")
         );
     }
 
     #[cfg(unix)]
     #[tokio::test]
     async fn test_relative_symlink_survives_directory_move() {
-        // Simulates Docker bind-mount: create ~/.grok/ layout at path A,
+        // Simulates Docker bind-mount: create ~/.logan/ layout at path A,
         // then move it to path B and verify the symlink still resolves.
         let dir = tempfile::tempdir().unwrap();
 
         // Create alice's layout
-        let alice = dir.path().join("alice").join(".grok");
+        let alice = dir.path().join("alice").join(".logan");
         let alice_downloads = alice.join("downloads");
         let alice_bin = alice.join("bin");
         std::fs::create_dir_all(&alice_downloads).unwrap();
         std::fs::create_dir_all(&alice_bin).unwrap();
-        std::fs::write(alice_downloads.join("grok-0.1.203"), "binary-content").unwrap();
+        std::fs::write(alice_downloads.join("logan-0.1.203"), "binary-content").unwrap();
 
         // Create a relative symlink (what the fix produces)
-        let rel_target = std::path::Path::new("../downloads/grok-0.1.203");
-        let link = alice_bin.join("grok");
+        let rel_target = std::path::Path::new("../downloads/logan-0.1.203");
+        let link = alice_bin.join("logan");
         atomic_symlink_swap(rel_target, &link).await.unwrap();
 
         // Verify it works at the original location
@@ -2737,7 +2737,7 @@ mod tests {
         // "Bind-mount" to bob: copy the entire .grok tree
         let bob_home = dir.path().join("bob");
         std::fs::create_dir_all(&bob_home).unwrap();
-        let bob = bob_home.join(".grok");
+        let bob = bob_home.join(".logan");
         let copy_status = std::process::Command::new("cp")
             .args(["-a", alice.to_str().unwrap(), bob.to_str().unwrap()])
             .status()
@@ -2745,11 +2745,11 @@ mod tests {
         assert!(copy_status.success());
 
         // Verify the symlink resolves at bob's path too
-        let bob_link = bob.join("bin").join("grok");
+        let bob_link = bob.join("bin").join("logan");
         assert!(bob_link.is_symlink());
         assert_eq!(
             std::fs::read_link(&bob_link).unwrap(),
-            std::path::PathBuf::from("../downloads/grok-0.1.203"),
+            std::path::PathBuf::from("../downloads/logan-0.1.203"),
             "symlink target should be relative"
         );
         assert_eq!(
@@ -2766,7 +2766,7 @@ mod tests {
         // the swap should still succeed.
         let dir = tempfile::tempdir().unwrap();
 
-        let link = dir.path().join("grok");
+        let link = dir.path().join("logan");
         // Create a broken symlink — points to a file that doesn't exist.
         std::os::unix::fs::symlink(dir.path().join("deleted-binary"), &link).unwrap();
         assert!(link.is_symlink());
@@ -2877,31 +2877,31 @@ mod tests {
             std::fs::write(d.join(format!("grok-{}-macos-aarch64", v)), v).unwrap();
         }
         // Current version.
-        std::fs::write(d.join("grok-0.1.145-macos-aarch64"), "current").unwrap();
+        std::fs::write(d.join("logan-0.1.145-macos-aarch64"), "current").unwrap();
 
         make_all_stale(d);
 
-        cleanup_old_downloads(d, "grok", "0.1.145").await;
+        cleanup_old_downloads(d, "logan", "0.1.145").await;
 
         // Current must survive.
-        assert!(d.join("grok-0.1.145-macos-aarch64").exists(), "current");
+        assert!(d.join("logan-0.1.145-macos-aarch64").exists(), "current");
         // Newest old version (0.1.144) must survive.
-        assert!(d.join("grok-0.1.144-macos-aarch64").exists(), "N-1");
+        assert!(d.join("logan-0.1.144-macos-aarch64").exists(), "N-1");
         // Everything else should be deleted.
         assert!(
-            !d.join("grok-0.1.143-macos-aarch64").exists(),
+            !d.join("logan-0.1.143-macos-aarch64").exists(),
             "0.1.143 should be deleted"
         );
         assert!(
-            !d.join("grok-0.1.142-macos-aarch64").exists(),
+            !d.join("logan-0.1.142-macos-aarch64").exists(),
             "0.1.142 should be deleted"
         );
         assert!(
-            !d.join("grok-0.1.141-macos-aarch64").exists(),
+            !d.join("logan-0.1.141-macos-aarch64").exists(),
             "0.1.141 should be deleted"
         );
         assert!(
-            !d.join("grok-0.1.140-macos-aarch64").exists(),
+            !d.join("logan-0.1.140-macos-aarch64").exists(),
             "0.1.140 should be deleted"
         );
     }
@@ -2912,18 +2912,18 @@ mod tests {
         let d = dir.path();
 
         // grok and grok-pager should not interfere with each other.
-        std::fs::write(d.join("grok-0.1.140-macos-aarch64"), "old-grok").unwrap();
-        std::fs::write(d.join("grok-0.1.141-macos-aarch64"), "current-grok").unwrap();
+        std::fs::write(d.join("logan-0.1.140-macos-aarch64"), "old-grok").unwrap();
+        std::fs::write(d.join("logan-0.1.141-macos-aarch64"), "current-grok").unwrap();
         std::fs::write(d.join("grok-pager-0.1.140-macos-aarch64"), "old-pager").unwrap();
         std::fs::write(d.join("grok-pager-0.1.141-macos-aarch64"), "current-pager").unwrap();
 
         // Cleanup only grok — pager files must be untouched.
         make_all_stale(d);
 
-        cleanup_old_downloads(d, "grok", "0.1.141").await;
+        cleanup_old_downloads(d, "logan", "0.1.141").await;
 
-        assert!(d.join("grok-0.1.141-macos-aarch64").exists());
-        assert!(d.join("grok-0.1.140-macos-aarch64").exists()); // only old, kept as N-1
+        assert!(d.join("logan-0.1.141-macos-aarch64").exists());
+        assert!(d.join("logan-0.1.140-macos-aarch64").exists()); // only old, kept as N-1
         assert!(
             d.join("grok-pager-0.1.140-macos-aarch64").exists(),
             "pager untouched"
@@ -2962,25 +2962,25 @@ mod tests {
         let d = dir.path();
 
         // Stale tmp: abandoned by a crashed updater — swept.
-        std::fs::write(d.join("grok-0.1.140-macos-aarch64.tmp"), "partial").unwrap();
-        make_stale(&d.join("grok-0.1.140-macos-aarch64.tmp"));
+        std::fs::write(d.join("logan-0.1.140-macos-aarch64.tmp"), "partial").unwrap();
+        make_stale(&d.join("logan-0.1.140-macos-aarch64.tmp"));
         // Fresh tmp: a concurrent updater's in-flight download — kept, or
         // its atomic rename would fail with ENOENT.
-        std::fs::write(d.join("grok-0.1.142-macos-aarch64.77-0.tmp"), "inflight").unwrap();
-        std::fs::write(d.join("grok-0.1.141-macos-aarch64"), "current").unwrap();
+        std::fs::write(d.join("logan-0.1.142-macos-aarch64.77-0.tmp"), "inflight").unwrap();
+        std::fs::write(d.join("logan-0.1.141-macos-aarch64"), "current").unwrap();
 
-        cleanup_old_downloads(d, "grok", "0.1.141").await;
+        cleanup_old_downloads(d, "logan", "0.1.141").await;
 
         assert!(
-            !d.join("grok-0.1.140-macos-aarch64.tmp").exists(),
+            !d.join("logan-0.1.140-macos-aarch64.tmp").exists(),
             "stale tmp cleaned up"
         );
         assert!(
-            d.join("grok-0.1.142-macos-aarch64.77-0.tmp").exists(),
+            d.join("logan-0.1.142-macos-aarch64.77-0.tmp").exists(),
             "fresh in-flight tmp must NOT be swept"
         );
         assert!(
-            d.join("grok-0.1.141-macos-aarch64").exists(),
+            d.join("logan-0.1.141-macos-aarch64").exists(),
             "current kept"
         );
     }
@@ -2998,22 +2998,22 @@ mod tests {
         for v in ["0.1.138", "0.1.139", "0.1.140"] {
             std::fs::write(d.join(format!("grok-{v}-macos-aarch64")), v).unwrap();
         }
-        std::fs::write(d.join("grok-0.1.141-macos-aarch64"), "current").unwrap();
+        std::fs::write(d.join("logan-0.1.141-macos-aarch64"), "current").unwrap();
         make_all_stale(d);
         // .138 is re-written NOW — simulating a racer that just renamed its
         // download into place (e.g. a rollback install racing an upgrade).
-        std::fs::write(d.join("grok-0.1.138-macos-aarch64"), "in-flight").unwrap();
+        std::fs::write(d.join("logan-0.1.138-macos-aarch64"), "in-flight").unwrap();
 
-        cleanup_old_downloads(d, "grok", "0.1.141").await;
+        cleanup_old_downloads(d, "logan", "0.1.141").await;
 
-        assert!(d.join("grok-0.1.141-macos-aarch64").exists(), "current");
-        assert!(d.join("grok-0.1.140-macos-aarch64").exists(), "N-1 kept");
+        assert!(d.join("logan-0.1.141-macos-aarch64").exists(), "current");
+        assert!(d.join("logan-0.1.140-macos-aarch64").exists(), "N-1 kept");
         assert!(
-            d.join("grok-0.1.138-macos-aarch64").exists(),
+            d.join("logan-0.1.138-macos-aarch64").exists(),
             "fresh just-renamed binary must NOT be deleted"
         );
         assert!(
-            !d.join("grok-0.1.139-macos-aarch64").exists(),
+            !d.join("logan-0.1.139-macos-aarch64").exists(),
             "genuinely old binary still swept"
         );
     }
@@ -3024,17 +3024,17 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let d = dir.path();
 
-        // grok-latest is a symlink — must be skipped.
-        let target = d.join("grok-0.1.141-macos-aarch64");
+        // logan-latest is a symlink — must be skipped.
+        let target = d.join("logan-0.1.141-macos-aarch64");
         std::fs::write(&target, "current").unwrap();
-        std::os::unix::fs::symlink(&target, d.join("grok-latest")).unwrap();
+        std::os::unix::fs::symlink(&target, d.join("logan-latest")).unwrap();
 
         make_all_stale(d);
 
-        cleanup_old_downloads(d, "grok", "0.1.141").await;
+        cleanup_old_downloads(d, "logan", "0.1.141").await;
 
         assert!(
-            d.join("grok-latest").exists(),
+            d.join("logan-latest").exists(),
             "symlink must not be deleted"
         );
         assert!(target.exists(), "current must not be deleted");
@@ -3046,7 +3046,7 @@ mod tests {
         // Should not panic or error on empty directory.
         make_all_stale(dir.path());
 
-        cleanup_old_downloads(dir.path(), "grok", "0.1.141").await;
+        cleanup_old_downloads(dir.path(), "logan", "0.1.141").await;
     }
 
     #[tokio::test]
@@ -3055,32 +3055,32 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let d = dir.path();
 
-        std::fs::write(d.join("grok-0.1.14-macos-aarch64"), "current").unwrap();
-        std::fs::write(d.join("grok-0.1.140-macos-aarch64"), "old-140").unwrap();
-        std::fs::write(d.join("grok-0.1.141-macos-aarch64"), "old-141").unwrap();
-        std::fs::write(d.join("grok-0.1.13-macos-aarch64"), "old-13").unwrap();
+        std::fs::write(d.join("logan-0.1.14-macos-aarch64"), "current").unwrap();
+        std::fs::write(d.join("logan-0.1.140-macos-aarch64"), "old-140").unwrap();
+        std::fs::write(d.join("logan-0.1.141-macos-aarch64"), "old-141").unwrap();
+        std::fs::write(d.join("logan-0.1.13-macos-aarch64"), "old-13").unwrap();
 
         make_all_stale(d);
 
-        cleanup_old_downloads(d, "grok", "0.1.14").await;
+        cleanup_old_downloads(d, "logan", "0.1.14").await;
 
         // Current must survive.
         assert!(
-            d.join("grok-0.1.14-macos-aarch64").exists(),
+            d.join("logan-0.1.14-macos-aarch64").exists(),
             "current 0.1.14"
         );
         // Newest old version (0.1.141) must survive as N-1.
         assert!(
-            d.join("grok-0.1.141-macos-aarch64").exists(),
+            d.join("logan-0.1.141-macos-aarch64").exists(),
             "N-1 is 0.1.141"
         );
         // 0.1.140 and 0.1.13 should be deleted.
         assert!(
-            !d.join("grok-0.1.140-macos-aarch64").exists(),
+            !d.join("logan-0.1.140-macos-aarch64").exists(),
             "0.1.140 should be deleted"
         );
         assert!(
-            !d.join("grok-0.1.13-macos-aarch64").exists(),
+            !d.join("logan-0.1.13-macos-aarch64").exists(),
             "0.1.13 should be deleted"
         );
     }
@@ -3098,7 +3098,7 @@ mod tests {
 
         make_all_stale(d);
 
-        cleanup_old_downloads(d, "grok-pager", "0.1.151").await;
+        cleanup_old_downloads(d, "logan-pager", "0.1.151").await;
 
         assert!(d.join("grok-pager-0.1.151-linux-x64").exists(), "current");
         assert!(d.join("grok-pager-0.1.150-linux-x64").exists(), "N-1 kept");
@@ -3121,52 +3121,52 @@ mod tests {
         for v in ["0.1.138", "0.1.139", "0.1.140"] {
             std::fs::write(d.join(format!("grok-{}", v)), v).unwrap();
         }
-        std::fs::write(d.join("grok-0.1.141"), "current").unwrap();
+        std::fs::write(d.join("logan-0.1.141"), "current").unwrap();
 
         make_all_stale(d);
 
-        cleanup_old_downloads(d, "grok", "0.1.141").await;
+        cleanup_old_downloads(d, "logan", "0.1.141").await;
 
-        assert!(d.join("grok-0.1.141").exists(), "current");
-        assert!(d.join("grok-0.1.140").exists(), "N-1 kept");
-        assert!(!d.join("grok-0.1.139").exists(), "0.1.139 deleted");
-        assert!(!d.join("grok-0.1.138").exists(), "0.1.138 deleted");
+        assert!(d.join("logan-0.1.141").exists(), "current");
+        assert!(d.join("logan-0.1.140").exists(), "N-1 kept");
+        assert!(!d.join("logan-0.1.139").exists(), "0.1.139 deleted");
+        assert!(!d.join("logan-0.1.138").exists(), "0.1.138 deleted");
     }
 
     #[tokio::test]
     async fn test_cleanup_old_downloads_alpha_versions() {
         // Alpha version filenames include pre-release tags:
-        //   grok-0.1.150-alpha.1-macos-aarch64
+        //   logan-0.1.150-alpha.1-macos-aarch64
         let dir = tempfile::tempdir().unwrap();
         let d = dir.path();
 
-        std::fs::write(d.join("grok-0.1.148-alpha.1-macos-aarch64"), "alpha-148-1").unwrap();
-        std::fs::write(d.join("grok-0.1.148-alpha.2-macos-aarch64"), "alpha-148-2").unwrap();
-        std::fs::write(d.join("grok-0.1.149-alpha.1-macos-aarch64"), "alpha-149-1").unwrap();
+        std::fs::write(d.join("logan-0.1.148-alpha.1-macos-aarch64"), "alpha-148-1").unwrap();
+        std::fs::write(d.join("logan-0.1.148-alpha.2-macos-aarch64"), "alpha-148-2").unwrap();
+        std::fs::write(d.join("logan-0.1.149-alpha.1-macos-aarch64"), "alpha-149-1").unwrap();
         // Current version is the newest alpha.
-        std::fs::write(d.join("grok-0.1.150-alpha.1-macos-aarch64"), "current").unwrap();
+        std::fs::write(d.join("logan-0.1.150-alpha.1-macos-aarch64"), "current").unwrap();
 
         make_all_stale(d);
 
-        cleanup_old_downloads(d, "grok", "0.1.150-alpha.1").await;
+        cleanup_old_downloads(d, "logan", "0.1.150-alpha.1").await;
 
         // Current must survive.
         assert!(
-            d.join("grok-0.1.150-alpha.1-macos-aarch64").exists(),
+            d.join("logan-0.1.150-alpha.1-macos-aarch64").exists(),
             "current alpha"
         );
         // Newest old (0.1.149-alpha.1) kept as N-1.
         assert!(
-            d.join("grok-0.1.149-alpha.1-macos-aarch64").exists(),
+            d.join("logan-0.1.149-alpha.1-macos-aarch64").exists(),
             "N-1 alpha"
         );
         // Older alphas deleted.
         assert!(
-            !d.join("grok-0.1.148-alpha.2-macos-aarch64").exists(),
+            !d.join("logan-0.1.148-alpha.2-macos-aarch64").exists(),
             "0.1.148-alpha.2 deleted"
         );
         assert!(
-            !d.join("grok-0.1.148-alpha.1-macos-aarch64").exists(),
+            !d.join("logan-0.1.148-alpha.1-macos-aarch64").exists(),
             "0.1.148-alpha.1 deleted"
         );
     }
@@ -3177,30 +3177,30 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let d = dir.path();
 
-        std::fs::write(d.join("grok-0.1.148-macos-aarch64"), "stable-148").unwrap();
-        std::fs::write(d.join("grok-0.1.149-alpha.1-macos-aarch64"), "alpha-149").unwrap();
-        std::fs::write(d.join("grok-0.1.149-macos-aarch64"), "stable-149").unwrap();
+        std::fs::write(d.join("logan-0.1.148-macos-aarch64"), "stable-148").unwrap();
+        std::fs::write(d.join("logan-0.1.149-alpha.1-macos-aarch64"), "alpha-149").unwrap();
+        std::fs::write(d.join("logan-0.1.149-macos-aarch64"), "stable-149").unwrap();
         // Current is a stable release.
-        std::fs::write(d.join("grok-0.1.150-macos-aarch64"), "current").unwrap();
+        std::fs::write(d.join("logan-0.1.150-macos-aarch64"), "current").unwrap();
 
         make_all_stale(d);
 
-        cleanup_old_downloads(d, "grok", "0.1.150").await;
+        cleanup_old_downloads(d, "logan", "0.1.150").await;
 
         // Current must survive.
-        assert!(d.join("grok-0.1.150-macos-aarch64").exists(), "current");
+        assert!(d.join("logan-0.1.150-macos-aarch64").exists(), "current");
         // Newest old is 0.1.149 stable (semver: 0.1.149 > 0.1.149-alpha.1).
         assert!(
-            d.join("grok-0.1.149-macos-aarch64").exists(),
+            d.join("logan-0.1.149-macos-aarch64").exists(),
             "N-1 is stable 0.1.149"
         );
         // The rest should be deleted.
         assert!(
-            !d.join("grok-0.1.149-alpha.1-macos-aarch64").exists(),
+            !d.join("logan-0.1.149-alpha.1-macos-aarch64").exists(),
             "alpha 0.1.149-alpha.1 deleted"
         );
         assert!(
-            !d.join("grok-0.1.148-macos-aarch64").exists(),
+            !d.join("logan-0.1.148-macos-aarch64").exists(),
             "stable 0.1.148 deleted"
         );
     }
@@ -3744,15 +3744,15 @@ mod tests {
     async fn test_cleanup_old_downloads_invalid_current_version_is_no_op() {
         let dir = tempfile::tempdir().unwrap();
         let d = dir.path();
-        std::fs::write(d.join("grok-0.1.140-macos-aarch64"), "v140").unwrap();
-        std::fs::write(d.join("grok-0.1.141-macos-aarch64"), "v141").unwrap();
+        std::fs::write(d.join("logan-0.1.140-macos-aarch64"), "v140").unwrap();
+        std::fs::write(d.join("logan-0.1.141-macos-aarch64"), "v141").unwrap();
 
         // Invalid version string → cleanup must early-return without deleting.
         make_all_stale(d);
 
-        cleanup_old_downloads(d, "grok", "not-a-version").await;
-        assert!(d.join("grok-0.1.140-macos-aarch64").exists());
-        assert!(d.join("grok-0.1.141-macos-aarch64").exists());
+        cleanup_old_downloads(d, "logan", "not-a-version").await;
+        assert!(d.join("logan-0.1.140-macos-aarch64").exists());
+        assert!(d.join("logan-0.1.141-macos-aarch64").exists());
     }
 
     #[tokio::test]
@@ -3760,7 +3760,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let missing = dir.path().join("does-not-exist");
         // Must not panic when the directory doesn't exist.
-        cleanup_old_downloads(&missing, "grok", "0.1.141").await;
+        cleanup_old_downloads(&missing, "logan", "0.1.141").await;
     }
 
     #[tokio::test]
@@ -3768,18 +3768,18 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let d = dir.path();
         // Files matching prefix but with a non-digit-leading suffix must be
-        // ignored (e.g. grok-latest, grok-pager-* when prefix is grok).
-        std::fs::write(d.join("grok-latest"), "alias").unwrap();
+        // ignored (e.g. logan-latest, grok-pager-* when prefix is grok).
+        std::fs::write(d.join("logan-latest"), "alias").unwrap();
         std::fs::write(d.join("grok-pager-0.1.141-macos-aarch64"), "pager").unwrap();
-        std::fs::write(d.join("grok-0.1.140-macos-aarch64"), "v140").unwrap();
-        std::fs::write(d.join("grok-0.1.141-macos-aarch64"), "current").unwrap();
+        std::fs::write(d.join("logan-0.1.140-macos-aarch64"), "v140").unwrap();
+        std::fs::write(d.join("logan-0.1.141-macos-aarch64"), "current").unwrap();
 
         make_all_stale(d);
 
-        cleanup_old_downloads(d, "grok", "0.1.141").await;
+        cleanup_old_downloads(d, "logan", "0.1.141").await;
 
-        // grok-latest and grok-pager-* must be untouched.
-        assert!(d.join("grok-latest").exists());
+        // logan-latest and grok-pager-* must be untouched.
+        assert!(d.join("logan-latest").exists());
         assert!(d.join("grok-pager-0.1.141-macos-aarch64").exists());
     }
 
@@ -3790,46 +3790,46 @@ mod tests {
         // Files with prefix + digit but unparseable as semver are ignored
         // (not deleted, not counted).
         std::fs::write(d.join("grok-9garbage-macos-aarch64"), "junk").unwrap();
-        std::fs::write(d.join("grok-0.1.141-macos-aarch64"), "current").unwrap();
+        std::fs::write(d.join("logan-0.1.141-macos-aarch64"), "current").unwrap();
 
         make_all_stale(d);
 
-        cleanup_old_downloads(d, "grok", "0.1.141").await;
+        cleanup_old_downloads(d, "logan", "0.1.141").await;
 
         assert!(
             d.join("grok-9garbage-macos-aarch64").exists(),
             "unparseable file must be ignored, not deleted"
         );
-        assert!(d.join("grok-0.1.141-macos-aarch64").exists());
+        assert!(d.join("logan-0.1.141-macos-aarch64").exists());
     }
 
     #[tokio::test]
     async fn test_cleanup_old_downloads_only_current_present_no_op() {
         let dir = tempfile::tempdir().unwrap();
         let d = dir.path();
-        std::fs::write(d.join("grok-0.1.141-macos-aarch64"), "current").unwrap();
+        std::fs::write(d.join("logan-0.1.141-macos-aarch64"), "current").unwrap();
 
         make_all_stale(d);
 
-        cleanup_old_downloads(d, "grok", "0.1.141").await;
+        cleanup_old_downloads(d, "logan", "0.1.141").await;
 
-        assert!(d.join("grok-0.1.141-macos-aarch64").exists());
+        assert!(d.join("logan-0.1.141-macos-aarch64").exists());
     }
 
     #[tokio::test]
     async fn test_cleanup_old_downloads_only_one_old_keeps_it() {
         let dir = tempfile::tempdir().unwrap();
         let d = dir.path();
-        std::fs::write(d.join("grok-0.1.140-macos-aarch64"), "v140").unwrap();
-        std::fs::write(d.join("grok-0.1.141-macos-aarch64"), "current").unwrap();
+        std::fs::write(d.join("logan-0.1.140-macos-aarch64"), "v140").unwrap();
+        std::fs::write(d.join("logan-0.1.141-macos-aarch64"), "current").unwrap();
 
         make_all_stale(d);
 
-        cleanup_old_downloads(d, "grok", "0.1.141").await;
+        cleanup_old_downloads(d, "logan", "0.1.141").await;
 
         // Only one old version → keep it as N-1.
-        assert!(d.join("grok-0.1.140-macos-aarch64").exists(), "N-1 kept");
-        assert!(d.join("grok-0.1.141-macos-aarch64").exists(), "current");
+        assert!(d.join("logan-0.1.140-macos-aarch64").exists(), "N-1 kept");
+        assert!(d.join("logan-0.1.141-macos-aarch64").exists(), "current");
     }
 
     #[tokio::test]
@@ -3840,12 +3840,12 @@ mod tests {
         std::fs::write(d.join("README.md"), "readme").unwrap();
         std::fs::write(d.join("config.toml"), "config").unwrap();
         std::fs::write(d.join("other-tool-0.1.0"), "other").unwrap();
-        std::fs::write(d.join("grok-0.1.140-macos-aarch64"), "v140").unwrap();
-        std::fs::write(d.join("grok-0.1.141-macos-aarch64"), "current").unwrap();
+        std::fs::write(d.join("logan-0.1.140-macos-aarch64"), "v140").unwrap();
+        std::fs::write(d.join("logan-0.1.141-macos-aarch64"), "current").unwrap();
 
         make_all_stale(d);
 
-        cleanup_old_downloads(d, "grok", "0.1.141").await;
+        cleanup_old_downloads(d, "logan", "0.1.141").await;
 
         assert!(d.join("README.md").exists());
         assert!(d.join("config.toml").exists());
@@ -3858,21 +3858,21 @@ mod tests {
         let d = dir.path();
         // Same version, multiple platforms (uncommon, but possible).
         // Both should be considered "current" via the version equality check.
-        std::fs::write(d.join("grok-0.1.141-macos-aarch64"), "mac").unwrap();
-        std::fs::write(d.join("grok-0.1.141-linux-x86_64"), "linux").unwrap();
-        std::fs::write(d.join("grok-0.1.140-macos-aarch64"), "old-mac").unwrap();
-        std::fs::write(d.join("grok-0.1.139-macos-aarch64"), "older-mac").unwrap();
+        std::fs::write(d.join("logan-0.1.141-macos-aarch64"), "mac").unwrap();
+        std::fs::write(d.join("logan-0.1.141-linux-x86_64"), "linux").unwrap();
+        std::fs::write(d.join("logan-0.1.140-macos-aarch64"), "old-mac").unwrap();
+        std::fs::write(d.join("logan-0.1.139-macos-aarch64"), "older-mac").unwrap();
 
         make_all_stale(d);
 
-        cleanup_old_downloads(d, "grok", "0.1.141").await;
+        cleanup_old_downloads(d, "logan", "0.1.141").await;
 
         // Both platform variants of current must survive.
-        assert!(d.join("grok-0.1.141-macos-aarch64").exists());
-        assert!(d.join("grok-0.1.141-linux-x86_64").exists());
+        assert!(d.join("logan-0.1.141-macos-aarch64").exists());
+        assert!(d.join("logan-0.1.141-linux-x86_64").exists());
         // N-1 (0.1.140) kept, older deleted.
-        assert!(d.join("grok-0.1.140-macos-aarch64").exists());
-        assert!(!d.join("grok-0.1.139-macos-aarch64").exists());
+        assert!(d.join("logan-0.1.140-macos-aarch64").exists());
+        assert!(!d.join("logan-0.1.139-macos-aarch64").exists());
     }
 
     #[tokio::test]
@@ -3882,20 +3882,20 @@ mod tests {
         // Stale tmp files are deleted regardless of version-parseability.
         std::fs::write(d.join("grok-junk.tmp"), "partial").unwrap();
         make_stale(&d.join("grok-junk.tmp"));
-        std::fs::write(d.join("grok-0.1.140-macos-aarch64.tmp"), "partial2").unwrap();
-        make_stale(&d.join("grok-0.1.140-macos-aarch64.tmp"));
-        std::fs::write(d.join("grok-0.1.141-macos-aarch64"), "current").unwrap();
+        std::fs::write(d.join("logan-0.1.140-macos-aarch64.tmp"), "partial2").unwrap();
+        make_stale(&d.join("logan-0.1.140-macos-aarch64.tmp"));
+        std::fs::write(d.join("logan-0.1.141-macos-aarch64"), "current").unwrap();
 
         make_all_stale(d);
 
-        cleanup_old_downloads(d, "grok", "0.1.141").await;
+        cleanup_old_downloads(d, "logan", "0.1.141").await;
 
         assert!(!d.join("grok-junk.tmp").exists(), "junk tmp deleted");
         assert!(
-            !d.join("grok-0.1.140-macos-aarch64.tmp").exists(),
+            !d.join("logan-0.1.140-macos-aarch64.tmp").exists(),
             "versioned tmp deleted"
         );
-        assert!(d.join("grok-0.1.141-macos-aarch64").exists());
+        assert!(d.join("logan-0.1.141-macos-aarch64").exists());
     }
 
     #[tokio::test]
@@ -3906,16 +3906,16 @@ mod tests {
         for v in ["0.1.138", "0.1.139", "0.1.140"] {
             std::fs::write(d.join(format!("grok-{}-macos-aarch64", v)), v).unwrap();
         }
-        std::fs::write(d.join("grok-0.1.141-macos-aarch64"), "current").unwrap();
+        std::fs::write(d.join("logan-0.1.141-macos-aarch64"), "current").unwrap();
 
         make_all_stale(d);
 
-        cleanup_old_downloads(d, "grok", "0.1.141").await;
+        cleanup_old_downloads(d, "logan", "0.1.141").await;
 
-        assert!(d.join("grok-0.1.141-macos-aarch64").exists(), "current");
-        assert!(d.join("grok-0.1.140-macos-aarch64").exists(), "N-1 only");
-        assert!(!d.join("grok-0.1.139-macos-aarch64").exists());
-        assert!(!d.join("grok-0.1.138-macos-aarch64").exists());
+        assert!(d.join("logan-0.1.141-macos-aarch64").exists(), "current");
+        assert!(d.join("logan-0.1.140-macos-aarch64").exists(), "N-1 only");
+        assert!(!d.join("logan-0.1.139-macos-aarch64").exists());
+        assert!(!d.join("logan-0.1.138-macos-aarch64").exists());
     }
 
     #[tokio::test]
@@ -3924,15 +3924,15 @@ mod tests {
         // grok-X.Y.Z-darwin-* layouts must split correctly.
         let dir = tempfile::tempdir().unwrap();
         let d = dir.path();
-        std::fs::write(d.join("grok-0.1.140-darwin-arm64"), "v140").unwrap();
-        std::fs::write(d.join("grok-0.1.141-darwin-arm64"), "current").unwrap();
+        std::fs::write(d.join("logan-0.1.140-darwin-arm64"), "v140").unwrap();
+        std::fs::write(d.join("logan-0.1.141-darwin-arm64"), "current").unwrap();
 
         make_all_stale(d);
 
-        cleanup_old_downloads(d, "grok", "0.1.141").await;
+        cleanup_old_downloads(d, "logan", "0.1.141").await;
 
-        assert!(d.join("grok-0.1.141-darwin-arm64").exists(), "current");
-        assert!(d.join("grok-0.1.140-darwin-arm64").exists(), "N-1");
+        assert!(d.join("logan-0.1.141-darwin-arm64").exists(), "current");
+        assert!(d.join("logan-0.1.140-darwin-arm64").exists(), "N-1");
     }
 
     // ──────────────────────────────────────────────────────────────────────
@@ -4335,7 +4335,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let src = dir.path().join("new-binary.exe");
         std::fs::write(&src, "new content").unwrap();
-        let dest = dir.path().join("grok.exe");
+        let dest = dir.path().join("logan.exe");
 
         windows_replace_exe(&src, &dest).await.unwrap();
 
@@ -4349,7 +4349,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let src = dir.path().join("new-binary.exe");
         std::fs::write(&src, "new content").unwrap();
-        let dest = dir.path().join("grok.exe");
+        let dest = dir.path().join("logan.exe");
         std::fs::write(&dest, "old content").unwrap();
 
         windows_replace_exe(&src, &dest).await.unwrap();
@@ -4364,7 +4364,7 @@ mod tests {
         let body: Vec<u8> = (0u8..=255).cycle().take(4096).collect();
         let src = dir.path().join("binary.exe");
         std::fs::write(&src, &body).unwrap();
-        let dest = dir.path().join("grok.exe");
+        let dest = dir.path().join("logan.exe");
 
         windows_replace_exe(&src, &dest).await.unwrap();
 
@@ -4377,7 +4377,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let src = dir.path().join("new.exe");
         std::fs::write(&src, "new").unwrap();
-        let dest = dir.path().join("grok.exe");
+        let dest = dir.path().join("logan.exe");
         std::fs::write(&dest, "current").unwrap();
         let old = dir.path().join("grok.exe.old");
         std::fs::write(&old, "stale-from-prior-update").unwrap();
@@ -4411,7 +4411,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let src = dir.path().join("new.exe");
         std::fs::write(&src, "updated binary").unwrap();
-        let dest = dir.path().join("grok.exe");
+        let dest = dir.path().join("logan.exe");
         std::fs::write(&dest, "running binary").unwrap();
 
         let _lock = std::fs::OpenOptions::new()
@@ -4442,7 +4442,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let src = dir.path().join("new.exe");
         std::fs::write(&src, "updated binary").unwrap();
-        let dest = dir.path().join("grok.exe");
+        let dest = dir.path().join("logan.exe");
         std::fs::write(&dest, "original").unwrap();
 
         // Dest locked like a running exe: blocks writes but allows rename.
@@ -4479,7 +4479,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let src = dir.path().join("binary.exe");
         std::fs::write(&src, "same content").unwrap();
-        let dest = dir.path().join("grok.exe");
+        let dest = dir.path().join("logan.exe");
         std::fs::write(&dest, "same content").unwrap();
 
         windows_replace_exe(&src, &dest).await.unwrap();
@@ -4493,7 +4493,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let src = dir.path().join("empty.exe");
         std::fs::write(&src, b"").unwrap();
-        let dest = dir.path().join("grok.exe");
+        let dest = dir.path().join("logan.exe");
         std::fs::write(&dest, "non-empty").unwrap();
 
         windows_replace_exe(&src, &dest).await.unwrap();
@@ -4514,7 +4514,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let src = dir.path().join("new.exe");
         std::fs::write(&src, "updated binary").unwrap();
-        let dest = dir.path().join("grok.exe");
+        let dest = dir.path().join("logan.exe");
         std::fs::write(&dest, "running binary").unwrap();
         let old = dir.path().join("grok.exe.old");
         std::fs::write(&old, "previous binary").unwrap();
@@ -4572,7 +4572,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let src = dir.path().join("new.exe");
         std::fs::write(&src, "updated binary").unwrap();
-        let dest = dir.path().join("grok.exe");
+        let dest = dir.path().join("logan.exe");
         std::fs::write(&dest, "running binary").unwrap();
         let old = dir.path().join("grok.exe.old");
         std::fs::write(&old, "previous binary").unwrap();
@@ -4627,7 +4627,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let src = dir.path().join("new.exe");
         std::fs::write(&src, "new").unwrap();
-        let dest = dir.path().join("grok.exe");
+        let dest = dir.path().join("logan.exe");
         std::fs::write(&dest, "current").unwrap();
         let old = dir.path().join("grok.exe.old");
         std::fs::write(&old, "stale").unwrap();

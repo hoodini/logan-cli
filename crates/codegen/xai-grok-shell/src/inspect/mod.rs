@@ -446,7 +446,7 @@ fn instruction_file_type(
     extra_rule_prefixes: &[PathBuf],
 ) -> &'static str {
     let path = Path::new(file_path);
-    if has_rules_directory(file_path, ".grok")
+    if has_rules_directory(file_path, ".logan")
         || has_rules_directory(file_path, ".cursor")
         || (!claude_imported && has_rules_directory(file_path, ".claude"))
         || extra_rule_prefixes
@@ -1612,7 +1612,7 @@ mod tests {
             );
         }
 
-        for path in ["/repo/.grok/rules/team.md", r"C:\repo\.grok\rules\team.md"] {
+        for path in ["/repo/.logan/rules/team.md", r"C:\repo\.grok\rules\team.md"] {
             assert_eq!(instruction_file_type(path, false, &[]), "rules");
         }
         for path in [
@@ -1687,7 +1687,7 @@ mod tests {
     fn requirements_layer_contributes_requires_non_empty_post_strip_table() {
         // A `fail_closed`-only file is kept by the loader but with an empty
         // post-strip table, so it must not count as contributing.
-        let path = "/home/u/.grok/requirements.toml";
+        let path = "/home/u/.logan/requirements.toml";
         let layer = |v| crate::config::RequirementsLayer {
             value: v,
             source: crate::config::RequirementsSource::File(std::path::PathBuf::from(path)),
@@ -1797,19 +1797,19 @@ mod tests {
     fn skill_entry_source_maps_scopes() {
         let home = Path::new("/home/u/.grok");
 
-        let s = skill_fixture("a", "/repo/.grok/skills/a/SKILL.md", SkillScope::Local);
+        let s = skill_fixture("a", "/repo/.logan/skills/a/SKILL.md", SkillScope::Local);
         assert!(matches!(
             skill_entry_source(&s, home),
             ConfigSource::Project { .. }
         ));
 
-        let s = skill_fixture("b", "/repo/.grok/skills/b/SKILL.md", SkillScope::Repo);
+        let s = skill_fixture("b", "/repo/.logan/skills/b/SKILL.md", SkillScope::Repo);
         assert!(matches!(
             skill_entry_source(&s, home),
             ConfigSource::Project { .. }
         ));
 
-        let s = skill_fixture("c", "/home/u/.grok/skills/c/SKILL.md", SkillScope::User);
+        let s = skill_fixture("c", "/home/u/.logan/skills/c/SKILL.md", SkillScope::User);
         assert!(matches!(
             skill_entry_source(&s, home),
             ConfigSource::User { .. }
@@ -1817,7 +1817,7 @@ mod tests {
 
         let s = skill_fixture(
             "d",
-            "/home/u/.grok/server-skills/d/SKILL.md",
+            "/home/u/.logan/server-skills/d/SKILL.md",
             SkillScope::Server,
         );
         assert!(matches!(
@@ -1825,7 +1825,7 @@ mod tests {
             ConfigSource::Server { .. }
         ));
 
-        let s = skill_fixture("e", "/home/u/.grok/bundled/e/SKILL.md", SkillScope::Bundled);
+        let s = skill_fixture("e", "/home/u/.logan/bundled/e/SKILL.md", SkillScope::Bundled);
         assert!(matches!(
             skill_entry_source(&s, home),
             ConfigSource::Bundled { .. }
@@ -1841,7 +1841,7 @@ mod tests {
 
         let s = skill_fixture(
             "help",
-            "/home/u/.grok/skills/help/SKILL.md",
+            "/home/u/.logan/skills/help/SKILL.md",
             SkillScope::User,
         );
         assert!(matches!(
@@ -1850,7 +1850,7 @@ mod tests {
         ));
 
         // Bundled name in a project dir: stays project.
-        let s = skill_fixture("help", "/repo/.grok/skills/help/SKILL.md", SkillScope::Repo);
+        let s = skill_fixture("help", "/repo/.logan/skills/help/SKILL.md", SkillScope::Repo);
         assert!(matches!(
             skill_entry_source(&s, home),
             ConfigSource::Project { .. }
@@ -1871,7 +1871,7 @@ mod tests {
         // not the extracted copy — stays user.
         let s = skill_fixture(
             "help",
-            "/home/u/.grok/skills/my-tools/SKILL.md",
+            "/home/u/.logan/skills/my-tools/SKILL.md",
             SkillScope::User,
         );
         assert!(matches!(
@@ -1882,7 +1882,7 @@ mod tests {
         // Non-bundled name under <grok_home>/skills: stays user.
         let s = skill_fixture(
             "my-skill",
-            "/home/u/.grok/skills/my-skill/SKILL.md",
+            "/home/u/.logan/skills/my-skill/SKILL.md",
             SkillScope::User,
         );
         assert!(matches!(
@@ -1919,7 +1919,7 @@ mod tests {
             )
             .unwrap();
         };
-        // Test-unique names: discovery also reads this machine's real ~/.grok dirs.
+        // Test-unique names: discovery also reads this machine's real ~/.logan dirs.
         let extra = tempfile::tempdir().unwrap();
         write(&extra.path().join("inspect-cfg-extra"), "inspect-cfg-extra");
         write(

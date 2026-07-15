@@ -545,7 +545,7 @@ impl StorageClient {
     ///
     /// These become the headers:
     ///   - `x-grok-client-version`
-    ///   - `x-grok-client-identifier` (one of "grok-shell", "grok-pager",
+    ///   - `x-grok-client-identifier` (one of "grok-shell", "logan-pager",
     ///     "grok-desktop", "grok-extension")
     ///
     /// Server-side logs in `cli-chat-proxy` and analytics queries now
@@ -1097,7 +1097,7 @@ impl StorageClient {
     ) -> reqwest_middleware::RequestBuilder {
         // Prefer caller-provided identity (from shell/pager/etc.) so that
         // cli-chat-proxy logs and metrics see the real end-user client
-        // (e.g. "0.1.210-alpha.5", "grok-shell" / "grok-pager").
+        // (e.g. "0.1.210-alpha.5", "grok-shell" / "logan-pager").
         // Falls back to the library's own version for bins/tests.
         let version = self
             .client_version

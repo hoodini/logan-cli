@@ -424,7 +424,7 @@ pub fn is_fetch_enabled() -> bool {
         .unwrap_or(true)
 }
 
-/// Fetch managed config + requirements and write to `~/.grok/`, trying the
+/// Fetch managed config + requirements and write to `~/.logan/`, trying the
 /// deployment key first, then a signed-in team. `Ok(false)` when neither applies.
 pub async fn sync() -> Result<bool, ManagedConfigError> {
     Ok(sync_with_budget(SyncBudget::Standard, None).await?.wrote)
@@ -902,7 +902,7 @@ network access: reconnect and start again. If you can't reconnect, contact your 
 /// `grok setup`); ceasing to serve `fail_closed` rolls back.
 pub fn managed_policy_gate() -> Result<(), String> {
     // Skip under the lib unit-test build only: `bootstrap` reaches this without a staged
-    // `GROK_HOME` and would flake on the dev machine's real marker/auth. The pure decision
+    // `LOGAN_HOME` and would flake on the dev machine's real marker/auth. The pure decision
     // is unit-tested; the integration tests (no `cfg(test)`) exercise this real path.
     if cfg!(test) {
         return Ok(());
@@ -926,7 +926,7 @@ pub fn managed_policy_gate() -> Result<(), String> {
 /// Detector + delete run under the managed-config lock (no rebind to B between them);
 /// contention skips — the holder owns the transition, like [`clear_orphan`].
 /// Residual: forging A→B→A offline sheds A's policy until its next online fetch — the same
-/// self-healing class as deleting the user-writable files outright; /etc/grok and MDM are unaffected.
+/// self-healing class as deleting the user-writable files outright; /etc/logan and MDM are unaffected.
 fn purge_prior_tenant_on_identity_change() {
     let crate::config::ServingIdentity::Team(team_id) = current_serving_identity_any_expiry()
     else {
@@ -957,7 +957,7 @@ fn managed_policy_gate_decision(
 /// and exit codes stay out of the library.
 #[derive(Debug)]
 pub enum SetupOutcome {
-    /// Config was written to `~/.grok`.
+    /// Config was written to `~/.logan`.
     Installed,
     /// The principal is valid but the server has no config for it.
     NothingConfigured,

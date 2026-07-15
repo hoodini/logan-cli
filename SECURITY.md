@@ -1,7 +1,10 @@
 # Security Policy
 
-Please report security vulnerabilities via our HackerOne program:
+**Logan** is maintained by **Yuval Avidani (YUV.AI)** -
+https://yuv.ai · https://github.com/hoodini
 
-https://hackerone.com/x
+This is a fork of xAI Grok Build. Do **not** report fork-specific issues to xAI.
 
-Do not open public GitHub issues for security reports.
+Please report security vulnerabilities privately to the maintainer.
+Do not open public GitHub issues for security reports until coordinated
+disclosure is agreed.

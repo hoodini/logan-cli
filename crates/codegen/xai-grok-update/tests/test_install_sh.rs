@@ -92,14 +92,14 @@ exit 0
 
 /// Seed a valid previous-good binary + symlink in the isolated home.
 fn seed_previous_good(home: &Path, platform: &str) -> PathBuf {
-    let downloads = home.join(".grok").join("downloads");
-    let bin = home.join(".grok").join("bin");
+    let downloads = home.join(".logan").join("downloads");
+    let bin = home.join(".logan").join("bin");
     std::fs::create_dir_all(&downloads).unwrap();
     std::fs::create_dir_all(&bin).unwrap();
     let prev = downloads.join(format!("grok-{platform}"));
     std::fs::write(&prev, GOOD_SCRIPT).unwrap();
     std::fs::set_permissions(&prev, std::fs::Permissions::from_mode(0o755)).unwrap();
-    let link = bin.join("grok");
+    let link = bin.join("logan");
     let _ = std::fs::remove_file(&link);
     std::os::unix::fs::symlink(format!("../downloads/grok-{platform}"), &link).unwrap();
     dunce::canonicalize(&prev).unwrap()
@@ -108,7 +108,7 @@ fn seed_previous_good(home: &Path, platform: &str) -> PathBuf {
 /// Re-resolve `$BIN_DIR/grok` from disk and re-run it: the active grok must
 /// always execute, and never be a `.tmp`/partial file.
 fn assert_active_grok_runs(home: &Path) {
-    let link = home.join(".grok").join("bin").join("grok");
+    let link = home.join(".logan").join("bin").join("logan");
     assert!(link.is_symlink(), "grok must remain a symlink");
     let resolved =
         dunce::canonicalize(&link).unwrap_or_else(|e| panic!("grok symlink dangles: {e}"));
@@ -134,7 +134,7 @@ fn run_installer(install_sh: &Path, home: &Path, fakebin: &Path, mode: &str, she
         .env("HOME", home)
         .env("PATH", path_env)
         .env("SHELL", shell)
-        .env("GROK_BIN_DIR", home.join(".grok").join("bin"))
+        .env("GROK_BIN_DIR", home.join(".logan").join("bin"))
         .env("GROK_CHANNEL", "stable")
         .env("FAKE_MODE", mode)
         .status()

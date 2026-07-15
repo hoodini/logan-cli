@@ -116,7 +116,7 @@ pub fn load_system_managed_config() -> std::io::Result<toml::Value> {
 pub struct ManagedConfigLayer {
     pub value: toml::Value,
     pub path: std::path::PathBuf,
-    /// `true` for the root-owned system layer (`/etc/grok`), derived from the
+    /// `true` for the root-owned system layer (`/etc/logan`), derived from the
     /// load directory.
     pub is_system: bool,
 }
@@ -377,12 +377,12 @@ pub struct CampaignsState {
     pub dismissed_ids: Vec<String>,
 }
 
-/// Path to `$GROK_HOME/campaigns_state.json` under `home`.
+/// Path to `$LOGAN_HOME/campaigns_state.json` under `home`.
 pub fn campaigns_state_path(home: &std::path::Path) -> std::path::PathBuf {
     home.join(CAMPAIGNS_STATE_FILE)
 }
 
-/// Fail-open dismissed ids from `$GROK_HOME/campaigns_state.json`.
+/// Fail-open dismissed ids from `$LOGAN_HOME/campaigns_state.json`.
 pub fn load_dismissed_ids_from_home() -> std::collections::HashSet<String> {
     let Some(home) = crate::user_grok_home() else {
         return std::collections::HashSet::new();
@@ -397,7 +397,7 @@ pub fn load_dismissed_ids_from_home() -> std::collections::HashSet<String> {
 
 /// Applies matching `[[version_overrides]]` patches against the running
 /// CLI version; strips the section either way. If the installed version
-/// can't be parsed (broken `GROK_TEST_VERSION` in dev), silently strips
+/// can't be parsed (broken `LOGAN_TEST_VERSION` in dev), silently strips
 /// without applying — keeps the CLI usable on a bad dev override.
 pub fn apply_version_overrides_with_registered(value: &mut toml::Value) -> std::io::Result<()> {
     match xai_grok_version::installed_semver() {

@@ -572,7 +572,7 @@ mod tests {
         assert_eq!(
             origin_client_info_from_meta(Some(&meta)),
             Some(OriginClientInfo {
-                product: "grok-pager".to_string(),
+                product: "logan-pager".to_string(),
                 version: Some("0.1.2".to_string()),
             })
         );

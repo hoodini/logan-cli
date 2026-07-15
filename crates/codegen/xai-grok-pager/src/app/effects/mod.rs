@@ -861,7 +861,7 @@ pub(crate) fn execute(
                         Some(auth_manager.clone()),
                         None,
                         Some(session_id.clone()),
-                        "grok-pager",
+                        "logan-pager",
                     );
                     Some((auth_manager, registry, storage))
                 });

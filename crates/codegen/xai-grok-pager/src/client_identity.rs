@@ -1,4 +1,4 @@
-pub const PAGER_CLIENT_TYPE: &str = "grok-pager";
+pub const PAGER_CLIENT_TYPE: &str = "logan-pager";
 pub const HEADLESS_CLIENT_TYPE: &str = "grok-shell";
 
 pub const PAGER_CLIENT_VERSION: &str = xai_grok_version::VERSION;

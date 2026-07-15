@@ -529,7 +529,7 @@ pub(crate) const METRIC_ALLOWED_ATTR_KEYS: &[&str] = &[
 /// field is externally controlled free text from ACP client metadata, so it
 /// must never pass verbatim — unknown values collapse to `"other"`.
 pub(crate) const KNOWN_CLIENT_IDENTIFIERS: &[&str] = &[
-    "grok-pager",
+    "logan-pager",
     "grok-tui",
     "grok-shell",
     "grok-web",

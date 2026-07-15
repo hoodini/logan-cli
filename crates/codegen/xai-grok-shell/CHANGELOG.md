@@ -159,7 +159,7 @@
 - **IME text input in Otty** no longer attaches unrelated clipboard images on every character.
 - **Rewind** now fully removes the selected turn from both scrollback and the model's conversation history.
 - **Queued prompts** now abort long blocking waits instead of waiting for the full timeout.
-- **File links and media** now work for worktree sessions under ~/.grok/worktrees/.
+- **File links and media** now work for worktree sessions under ~/.logan/worktrees/.
 - **Collapsed Read/Edit tool rows** now show only the filename instead of long absolute paths.
 - **Clipboard copies on Wayland** now succeed even when the terminal loses focus mid-copy.
 - **User messages queued** behind an auto-wake turn are no longer lost when the user presses Ctrl+C.
@@ -972,7 +972,7 @@
 - **Dashboard empty state** is now a single hint line; dispatch and peek placeholders appear only when unfocused.
 - **Fixed memory leaks** that could cause the CLI to use tens of gigabytes during long sessions with many tool calls.
 - **Login on SSH or headless machines** now tells you when the browser cannot be opened automatically and shows the URL to visit manually.
-- **Fixed git clone failures** on Windows when the CLI tries to clone marketplace plugins into ~/.grok.
+- **Fixed git clone failures** on Windows when the CLI tries to clone marketplace plugins into ~/.logan.
 
 ## Performance
 
@@ -1115,7 +1115,7 @@
 
 ## Features
 
-- **`grok --debug`** now produces per-session log files under ~/.grok/debug/ even with a leader process.
+- **`grok --debug`** now produces per-session log files under ~/.logan/debug/ even with a leader process.
 
 ## Bug Fixes
 
@@ -2064,7 +2064,7 @@
 - **Directly waited** background tasks no longer trigger extra notifications.
 - **Loop indicators** are now properly removed when subagents shut down.
 - **run_terminal_cmd** tool name restored; background parameter rename preserved.
-- **Model picker** now recovers automatically after sleep/resume or temporary network issues instead of staying stuck on Grok Build.
+- **Model picker** now recovers automatically after sleep/resume or temporary network issues instead of staying stuck on Logan.
 - **MCP server connections** now succeed for servers that enforce audience binding on OAuth tokens.
 - **read_file** now accesses gitignored files by default (grep/list_dir/search_replace still block them unless configured).
 - **--no-ask-user** flag now correctly disables the ask_user_question tool in both TUI and headless modes.
@@ -3000,7 +3000,7 @@
 
 ## Features
 
-- **X Premium and Premium+** tiers now grant access to Grok Build.
+- **X Premium and Premium+** tiers now grant access to Logan.
 
 ## Bug Fixes
 
@@ -3139,7 +3139,7 @@
 
 - **`grok sessions search`** now supports **full-text queries** across chat content and tools.
 - **Session picker** now combines fuzzy matching with **deep content search** results.
-- **Unified logs** now saved to `~/.grok/logs/unified.jsonl` with **Download Logs** in desktop.
+- **Unified logs** now saved to `~/.logan/logs/unified.jsonl` with **Download Logs** in desktop.
 
 ## Bug Fixes
 
@@ -3462,11 +3462,11 @@
 - **Startup announcements** emits x.ai/announcements/refreshed ACP notification on agent init.
 - **Auto-enroll updates** defaults to enabling automatic updates without interactive prompt.
 - **Subagent visualizations** in pager now show persona, role, and model metadata.
-- **Bundled agents** discovered from ~/.grok/bundled/agents/ with lowest precedence after project/user/built-in.
+- **Bundled agents** discovered from ~/.logan/bundled/agents/ with lowest precedence after project/user/built-in.
 - **Pager welcome screen** displays rotated tip-of-the-day from RemoteSettings honoring config and env overrides.
 - **image_gen/video_gen tools** instruct model to display generated media inline via markdown.
 - **Project plugins** default disabled with enable via [plugins].enabled and added counts for UI.
-- **Enterprise managed configs** via ~/.grok/managed_config.toml/requirements.toml with `grok inspect` and `grok setup`.
+- **Enterprise managed configs** via ~/.logan/managed_config.toml/requirements.toml with `grok inspect` and `grok setup`.
 - **web_fetch tool** enabled via [features] web_fetch in config.toml alongside env/remote settings.
 - **grok login defaults to OAuth** instead of legacy relay; use --legacy or GROK_OAUTH_ENABLED=0 for old behavior.
 - **Clipboard copy over SSH/tmux** now reaches local terminal via OSC 52 alongside native clipboard writes.
@@ -3526,7 +3526,7 @@
 
 ## Features
 
-- **Per-hook enable/disable toggles** via ~/.grok/disabled-hooks file and 'e' key with **multi-line j/k navigation fix**.
+- **Per-hook enable/disable toggles** via ~/.logan/disabled-hooks file and 'e' key with **multi-line j/k navigation fix**.
 - **Bash-mode execute blocks auto-expand** after completion to display output immediately.
 - **Video generation tool** supports xAI API with async polling, download and sequential MP4 naming.
 - **Marketplace plugin installs** route through git_install with provenance tracking.
@@ -3628,7 +3628,7 @@
 
 ## Features
 
-- **Configurable permission policies** enable automatic allow/deny rules via ~/.grok/config.toml before existing checks.
+- **Configurable permission policies** enable automatic allow/deny rules via ~/.logan/config.toml before existing checks.
 - **Prevents timeout doom loops** by auto-backgrounding foreground commands exceeding default 120s without explicit timeout.
 - **ACP git extensions** enable desktop git info/branches/checkout without local shelling, supporting cloud workspaces.
 - **Richer hook annotations** add HTTP URL/status/response previews to scrollback for pre-tool-use summaries.
@@ -3792,7 +3792,7 @@
 - **Claude frontmatter parity** parses allowed-tools lists/strings, model, and effort in skill frontmatter.
 - **Auto-injected managed MCPs** from grok.com for WebLogin, deduped with config.toml opt-out.
 - **ACP worktree management** adds list/show/gc/db methods with filters and dry-run.
-- **ACP x.ai/auth/logout** removes scopes from ~/.grok/auth.json.
+- **ACP x.ai/auth/logout** removes scopes from ~/.logan/auth.json.
 - **Custom npm registry** via config.toml or GROK_NPM_REGISTRY respects enterprise.npmrc.
 - **CLI worktree commands use ACP** with repo-wide session resolution for -w -r.
 - **Repo-wide worktree session resume** resolves locally across same-repo directories via ACP before remote fallback.
@@ -3822,7 +3822,7 @@
 
 - **Subagent worktrees preserved** after completion with path in output; role-level fork and isolation defaults added.
 - **Always-approve mode** renames yolo flag/slash command with backward-compatible aliases preserved.
-- **Help skill reads ~/.grok/config.toml** to answer MCP server and model configuration queries.
+- **Help skill reads ~/.logan/config.toml** to answer MCP server and model configuration queries.
 - **Deployment keys supported** on all API proxy endpoints including storage and sessions.
 - **Public install-grok.sh script** supports deployment keys and channels without VPN.
 - **Subagent prompts** use dedicated compact template with system role/persona.
@@ -3861,7 +3861,7 @@
 - **Structured subagent details and lineage** render diagnostics below selected TUI tasks rows.
 - **TUI /plugins commands** support live reload, qualified autocomplete, and plugin source display.
 - **Subagent safety guards** fallback to parent model on unknown config or fork context overflow.
-- **Bundled /help skill** extracts README.md to ~/.grok/ for slash command and model self-help.
+- **Bundled /help skill** extracts README.md to ~/.logan/ for slash command and model self-help.
 - **Identifies worktree sessions** in client sidebars via session_kind and source_workspace_dir metadata in summary.json.
 
 ## Bug Fixes
@@ -3930,7 +3930,7 @@
 - **Plugin install/uninstall commands** support git repos, tags, subdirs, local paths.
 - **Auto-injects managed MCPs** from grok.com into CLI/TUI for WebLogin users.
 - **ACP worktree management** adds list/show/gc/db methods with filters and dry-run.
-- **ACP logout method** removes scopes from ~/.grok/auth.json.
+- **ACP logout method** removes scopes from ~/.logan/auth.json.
 - **Discovers skills from.claude/skills** alongside.grok/skills across local, repo, and user directories.
 - **Inline TUI scrollback annotations** for hooks with ✓ success indicator and hashline_* Claude aliases.
 - **New hook events** Stop/Notification/UserPromptSubmit/SubagentStart/Stop with Claude-compatible PreToolUse schema.
@@ -4309,7 +4309,7 @@
 - **Auto-installs grok-pager** alongside grok during internal and GitHub release updates.
 - **Mid-session token refresh** via OIDC grants or external auth binaries prevents expiry.
 - **Hashline toolset** enables anchor-stable file read/edit/grep with validation, recovery, ranges, and config integration.
-- **Hooks system** executes custom scripts for pre/post-tool and session events from ~/.grok/hooks/ with deny-wins trust controls.
+- **Hooks system** executes custom scripts for pre/post-tool and session events from ~/.logan/hooks/ with deny-wins trust controls.
 - **Independent feedback flag** gates /feedback and popups separately from telemetry via GROK_FEEDBACK_ENABLED.
 - **Leader CLI** adds `grok leader list/info/profile/kill/dev` for discovery and CPU profiling.
 - **Plan mode state machine** enables agent planning phase with enter/exit tools and session persistence.
@@ -4622,7 +4622,7 @@
 - **PTY notifications reach the correct client** via _meta routing metadata, with shared helpers and session-aware cwd fallback.
 - **Concurrent tool calls no longer crash** the tools server; semaphore serializes access to the thread-local toolset.
 - **Cross-session notification leaks eliminated** in leader mode for relay, dead-client, and ext/notification routing paths.
-- **Leader auto-update pre-downloads the binary** before shutdown and resolves the ~/.grok/bin symlink at spawn time.
+- **Leader auto-update pre-downloads the binary** before shutdown and resolves the ~/.logan/bin symlink at spawn time.
 - **First-compaction memory flush fires correctly** by pre-incrementing the compaction counter before the flush guard.
 - **Interval memory flush resumes after compaction** by resetting the conversation length counter when history is compacted.
 - **Session content restored on TUI reconnect** by clearing stale scrollback, resetting turn state, and gating live updates during replay.
@@ -4798,7 +4798,7 @@
 - **Accurate prompt re-rendering** now respects active tool overrides and disabled tools by centralizing all prompt assembly through a shared PromptContext.
 - **A/B cancellation no longer double-finishes comparisons** by suppressing completion notifications and after-uploads when cancel handlers already removed active comparison state.
 - **Running outside git repos no longer panics** by skipping gitignore construction without a repo root and guarding absolute-path ignore checks.
-- **npm installs now use a canonical Grok binary path** via postinstall copy to `~/.grok/bin/grok`, preventing installer conflicts and version confusion.
+- **npm installs now use a canonical Grok binary path** via postinstall copy to `~/.logan/bin/logan`, preventing installer conflicts and version confusion.
 
 
 # 0.1.142

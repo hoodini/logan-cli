@@ -94,10 +94,10 @@ pub enum ClientType {
     /// Treated identically to GrokTUI for permission options (gets bash highlights +
     /// interactive selection). Reports as "pager" for telemetry attribution.
     ///
-    /// Accepts both the hyphenated `"grok-pager"` (what the pager actually
+    /// Accepts both the hyphenated `"logan-pager"` (what the pager actually
     /// sends over the wire, matching `PAGER_CLIENT_TYPE`) and the underscored
     /// `"grok_pager"` form for symmetry with the rest of this enum.
-    #[serde(rename = "grok-pager", alias = "grok_pager")]
+    #[serde(rename = "logan-pager", alias = "grok_pager")]
     GrokPager,
     /// Grok Desktop (Electron) client - identified by clientIdentifier "grok-desktop".
     /// Uses TUI-style bash permission options (primary command extraction + prefix matching)
@@ -114,7 +114,7 @@ impl ClientType {
             Self::GrokWeb => "grok-web",
             Self::Nebula => "nebula",
             Self::Extension => "grok-code-extension",
-            Self::GrokPager => "grok-pager",
+            Self::GrokPager => "logan-pager",
             Self::Desktop => "grok-desktop",
         }
     }
@@ -125,7 +125,7 @@ impl ClientType {
             Some("nebula") => Self::Nebula,
             Some("grok-code-extension") => Self::Extension,
             Some("grok-desktop") => Self::Desktop,
-            Some("grok-pager") => Self::GrokPager,
+            Some("logan-pager") => Self::GrokPager,
             _ => Self::Generic,
         }
     }
@@ -354,7 +354,7 @@ pub enum ToolFilter {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum RequirementSource {
     Unknown,
-    /// User-writable `~/.grok/requirements.toml` — untrusted for keeping a
+    /// User-writable `~/.logan/requirements.toml` — untrusted for keeping a
     /// catch-all allow under the pin (a restricted user can edit it).
     Requirements {
         path: std::path::PathBuf,

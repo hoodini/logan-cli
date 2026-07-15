@@ -132,7 +132,7 @@ Switch to a different model. Accepts model IDs or display names (case-insensitiv
 
 ```
 /model grok-build
-/model Grok Build
+/model Logan
 /model Reasoning X high
 ```
 
@@ -539,7 +539,7 @@ Toggle message timestamps on or off.
 
 ## Skills as Slash Commands
 
-Any enabled skill with `user-invocable: true` in its SKILL.md frontmatter appears as a slash command. (A skill turned off via `/skills` is not advertised.) For example, if you have a skill at `~/.grok/skills/commit/SKILL.md`, you can invoke it with:
+Any enabled skill with `user-invocable: true` in its SKILL.md frontmatter appears as a slash command. (A skill turned off via `/skills` is not advertised.) For example, if you have a skill at `~/.logan/skills/commit/SKILL.md`, you can invoke it with:
 
 ```
 /commit fix typo in README
