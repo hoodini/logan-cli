@@ -313,17 +313,26 @@ Repo diagrams are also plain files you can open on [excalidraw.com](https://exca
 
 ---
 
-## Assets
+## Docs & assets
+
+| Doc | Contents |
+| --- | --- |
+| [docs/FEATURES.md](docs/FEATURES.md) | Goals, tokens, auto-route, LiteLLM/Langfuse, remote agent |
+| [docs/REMOTE_AGENT.md](docs/REMOTE_AGENT.md) | Call Logan from other AIs / HTTP |
+| [docs/SETUP.md](docs/SETUP.md) | Install + LLM setup |
+| [docs/COMPARISON.md](docs/COMPARISON.md) | vs Grok Build OSS |
+| [docs/architecture/ARCHITECTURE.md](docs/architecture/ARCHITECTURE.md) | Deep architecture |
 
 | Asset | Path |
 | --- | --- |
 | Hero banner | [docs/assets/banner.jpg](docs/assets/banner.jpg) |
-| Prompt journey (jpg) | [docs/assets/infographic-prompt-journey.jpg](docs/assets/infographic-prompt-journey.jpg) |
-| Prompt journey (svg) | [docs/assets/infographic-prompt-journey.svg](docs/assets/infographic-prompt-journey.svg) |
+| Prompt journey (Mermaid) | this README |
+| Prompt journey (svg/jpg) | [docs/assets/](docs/assets/) |
 | Project overview | [docs/assets/infographic-project-overview.svg](docs/assets/infographic-project-overview.svg) |
 | vs Grok Build | [docs/assets/infographic-vs-grok-build.svg](docs/assets/infographic-vs-grok-build.svg) |
 | ASCII banner | [docs/assets/ascii-banner.txt](docs/assets/ascii-banner.txt) |
-| TUI welcome logo | `crates/codegen/xai-grok-pager/assets/logo/logo07.txt` |
+
+Diagrams: **Mermaid first** (GitHub-native). SVG/JPG as extras. Excalidraw files optional offline.
 
 ---
 
