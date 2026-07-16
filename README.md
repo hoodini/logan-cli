@@ -109,6 +109,7 @@ Extra visuals (optional): [journey SVG](docs/assets/infographic-prompt-journey.s
 | **Local stats rollup** | **Logan scripts** | `examples/scripts/logan-call.sh` → `~/.logan/stats/usage.jsonl` · `usage-rollup.py` |
 | **Smart auto-routing** | **Native `--route auto`** | Classifies prompt → `tier-fast/default/premium/local` before sample |
 | **`/stats`** | **First-class** | Session input/output/cache/reasoning/$ by model |
+| **Live last-turn chips** | **Shipped** | Status bar: `24K/200K 12% · in 2.4K out 180 c 1.2K` after every sample |
 | **LiteLLM** | **Works today** | OpenAI-compat `base_url` → LiteLLM proxy |
 | **Langfuse** | **OTEL recipe** | `examples/config/langfuse.env.example` + observability.toml |
 | **Remote agent for other AIs** | **Hardened HTTP** | Auth + quotas · `examples/scripts/logan-agent-server.py` |

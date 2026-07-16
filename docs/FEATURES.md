@@ -24,6 +24,7 @@ token visibility, auto-routing, goals, observability, and remote-agent use.
 | **Memory / self-improve** | **Yes (Logan)** | Memory + dream + skills + auto-reflect hooks |
 | **Smart auto model routing** | **`--route auto` shipped** | Heuristic classifier → `tier-*` before sample; skill still available |
 | **`/stats`** | **Shipped** | Session ledger: input/output/cache/reasoning/cost by model |
+| **Live status bar last-turn** | **Shipped** | Every sample updates context bar: `in / out / c` from `PromptResponse._meta` (no `/stats` required) |
 
 ---
 

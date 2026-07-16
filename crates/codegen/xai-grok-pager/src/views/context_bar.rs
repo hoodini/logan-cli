@@ -236,17 +236,30 @@ pub fn context_bar_line_detailed(
     let breakpoints = default_breakpoints(theme);
     let color = crate::theme::quantize(blend_color(pct, &breakpoints));
 
-    // Default: `24K/200K 12%` — live fill always visible (Logan UX).
+    // Default: `24K/200K 12% · in 2.4K out 180 c 1.2K` - fill + last call always on.
     let mut token_str = format!(
         "{} / {} {}",
         fmt_tokens(used),
         fmt_tokens(total),
         fmt_pct5(pct).trim()
     );
-    // Near compact threshold: pulse warning glyph
-    if let Some(thr) = detail.and_then(|d| d.compact_at_pct) {
-        if pct >= thr as f64 {
-            token_str.push_str(" ⚠");
+    if let Some(d) = detail {
+        if d.last_input.is_some() || d.last_output.is_some() || d.last_cache_read.is_some() {
+            let li = d.last_input.unwrap_or(0);
+            let lo = d.last_output.unwrap_or(0);
+            let lc = d.last_cache_read.unwrap_or(0);
+            token_str.push_str(&format!(
+                " · in {} out {} c {}",
+                fmt_tokens(li),
+                fmt_tokens(lo),
+                fmt_tokens(lc)
+            ));
+        }
+        // Near compact threshold: warning glyph
+        if let Some(thr) = d.compact_at_pct {
+            if pct >= thr as f64 {
+                token_str.push_str(" !");
+            }
         }
     }
 
@@ -402,12 +415,43 @@ mod tests {
 
     #[test]
     fn test_context_bar_default_shows_compact_token_usage() {
-        // Default (non-hovered) state shows `used / total` with no padding.
+        // Default shows `used / total` plus live fill percentage (Logan UX).
         let theme = Theme::default();
         let line = context_bar_line(Some(8_500), Some(1_000_000), false, &theme)
             .expect("token data provided");
         let text = line_text(&line);
-        assert_eq!(text, "8.5K / 1.0M");
+        assert!(
+            text.starts_with("8.5K / 1.0M"),
+            "expected token ratio prefix, got {text:?}"
+        );
+        assert!(
+            text.contains('%') || text.contains("0.85"),
+            "expected live percentage on status bar, got {text:?}"
+        );
+    }
+
+    #[test]
+    fn test_context_bar_default_shows_last_call_when_detail_present() {
+        let theme = Theme::default();
+        let detail = ContextBarDetail {
+            last_input: Some(2400),
+            last_output: Some(180),
+            last_cache_read: Some(1200),
+            ..Default::default()
+        };
+        let line = context_bar_line_detailed(
+            Some(24_000),
+            Some(200_000),
+            false,
+            &theme,
+            false,
+            Some(detail),
+        )
+        .expect("token data");
+        let text = line_text(&line);
+        assert!(text.contains("in 2.4K"), "got {text:?}");
+        assert!(text.contains("out 180"), "got {text:?}");
+        assert!(text.contains("c 1.2K"), "got {text:?}");
     }
 
     #[test]

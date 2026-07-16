@@ -15,13 +15,125 @@ use super::session::lifecycle::skip_picker_and_create_session;
 use super::voice::voice_stop_on_submit;
 use crate::app::actions::{Action, Effect};
 use crate::app::agent::{AgentId, AgentState};
-use crate::app::agent_view::AgentView;
+use crate::app::agent_view::{AgentView, LastApiUsage};
 use crate::app::app_view::{ActiveView, AppView};
 use crate::notifications::{NotificationEvent, NotificationEventKind};
 use crate::scrollback::block::RenderBlock;
 use crate::scrollback::blocks::SessionEvent;
 use agent_client_protocol as acp;
 use xai_grok_telemetry::session_ctx::log_event;
+
+/// Extract last-sample token counts from `PromptResponse._meta`.
+///
+/// Shell stamps camelCase fields on every turn (`inputTokens`, `outputTokens`,
+/// `cachedReadTokens`, plus nested `usage` with full-prompt totals). Prefer
+/// last-call fields when present; fall back to `usage` totals.
+fn last_api_usage_from_prompt_meta(meta: Option<&acp::Meta>) -> Option<LastApiUsage> {
+    let meta = meta?;
+    let u32_field = |key: &str| -> Option<u64> {
+        meta.get(key).and_then(|v| {
+            v.as_u64()
+                .or_else(|| v.as_i64().map(|i| i.max(0) as u64))
+                .or_else(|| v.as_f64().map(|f| f.max(0.0) as u64))
+        })
+    };
+    // Last model call (sibling fields on _meta)
+    let last_in = u32_field("inputTokens");
+    let last_out = u32_field("outputTokens");
+    let last_cache = u32_field("cachedReadTokens");
+    if last_in.is_some() || last_out.is_some() || last_cache.is_some() {
+        return Some(LastApiUsage {
+            input_tokens: last_in.unwrap_or(0),
+            output_tokens: last_out.unwrap_or(0),
+            cached_read_tokens: last_cache.unwrap_or(0),
+            reasoning_tokens: u32_field("reasoningTokens").unwrap_or(0),
+        });
+    }
+    // Whole-prompt ledger under usage (camelCase PromptUsage)
+    let usage = meta.get("usage")?;
+    let get = |key: &str| -> u64 {
+        usage
+            .get(key)
+            .and_then(|v| {
+                v.as_u64()
+                    .or_else(|| v.as_i64().map(|i| i.max(0) as u64))
+                    .or_else(|| v.as_f64().map(|f| f.max(0.0) as u64))
+            })
+            .unwrap_or(0)
+    };
+    let input = get("inputTokens");
+    let output = get("outputTokens");
+    let cache = get("cachedReadTokens");
+    if input == 0 && output == 0 && cache == 0 {
+        return None;
+    }
+    Some(LastApiUsage {
+        input_tokens: input,
+        output_tokens: output,
+        cached_read_tokens: cache,
+        reasoning_tokens: get("reasoningTokens"),
+    })
+}
+
+#[cfg(test)]
+mod last_api_usage_tests {
+    use super::*;
+
+    fn meta(v: serde_json::Value) -> acp::Meta {
+        match v {
+            serde_json::Value::Object(map) => map,
+            other => panic!("expected meta object, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn prefers_last_call_sibling_fields() {
+        let m = meta(serde_json::json!({
+            "inputTokens": 1500,
+            "outputTokens": 200,
+            "cachedReadTokens": 1000,
+            "reasoningTokens": 50,
+            "usage": {
+                "inputTokens": 9999,
+                "outputTokens": 9999,
+                "cachedReadTokens": 9999
+            }
+        }));
+        let u = last_api_usage_from_prompt_meta(Some(&m)).expect("usage");
+        assert_eq!(u.input_tokens, 1500);
+        assert_eq!(u.output_tokens, 200);
+        assert_eq!(u.cached_read_tokens, 1000);
+        assert_eq!(u.reasoning_tokens, 50);
+    }
+
+    #[test]
+    fn falls_back_to_nested_usage_totals() {
+        let m = meta(serde_json::json!({
+            "usage": {
+                "inputTokens": 2400,
+                "outputTokens": 180,
+                "cachedReadTokens": 1200,
+                "reasoningTokens": 10
+            }
+        }));
+        let u = last_api_usage_from_prompt_meta(Some(&m)).expect("usage");
+        assert_eq!(u.input_tokens, 2400);
+        assert_eq!(u.output_tokens, 180);
+        assert_eq!(u.cached_read_tokens, 1200);
+        assert_eq!(u.reasoning_tokens, 10);
+    }
+
+    #[test]
+    fn none_when_meta_missing_or_empty() {
+        assert!(last_api_usage_from_prompt_meta(None).is_none());
+        let empty = meta(serde_json::json!({ "sessionId": "s" }));
+        assert!(last_api_usage_from_prompt_meta(Some(&empty)).is_none());
+        let zeros = meta(serde_json::json!({
+            "usage": { "inputTokens": 0, "outputTokens": 0, "cachedReadTokens": 0 }
+        }));
+        assert!(last_api_usage_from_prompt_meta(Some(&zeros)).is_none());
+    }
+}
 
 /// Chat kind for the next create: CLI `--chat` (`app.chat_mode`) or one-shot
 /// `/chat` (`deferred_startup.pending_chat`, consumed here).
@@ -1144,6 +1256,14 @@ pub(super) fn handle_prompt_response(
             .current_prompt_id
             .clone()
             .or_else(|| response_pid.clone());
+
+        // Live status-bar token chip: last sample in / out / cache from PromptResponse _meta
+        // (shell already stamps inputTokens, outputTokens, cachedReadTokens on every turn).
+        if let Ok(pr) = &result {
+            if let Some(usage) = last_api_usage_from_prompt_meta(pr.meta.as_ref()) {
+                agent.last_api_usage = Some(usage);
+            }
+        }
 
         agent.session.finish_turn(&mut agent.scrollback);
 

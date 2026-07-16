@@ -18,7 +18,7 @@ Author: Yuval Avidani (YUV.AI) · claws out for hard bugs
 
 | Element | Default | Hover / expand |
 | --- | --- | --- |
-| **Context** | `24K / 200K 12%` (+ ⚠ near compact) | `sys · msg · tools · free · compact@85% · last in/out/cache` |
+| **Context** | `24K / 200K 12% · in 2.4K out 180 c 1.2K` (+ `!` near compact) | `sys · msg · tools · free · last in/out/cache · compact@85%` |
 | **Credits** | product bar when applicable | manage/top-up |
 | **Queue** | `+N` | open queue |
 | **Goal** | live goal tokens | goal detail |
@@ -27,9 +27,10 @@ Author: Yuval Avidani (YUV.AI) · claws out for hard bugs
 Implemented now:
 
 - Context bar always shows **percentage**  
-- Near auto-compact threshold shows **⚠**  
-- Hover shows **composition + session API usage** when known  
-- `/stats` full breakdown after turns  
+- After every sample, last-turn **in / out / cache** from `PromptResponse._meta` (no `/stats` required)  
+- Near auto-compact threshold shows **`!`**  
+- Hover shows **composition + last-call usage** when known  
+- `/stats` still refreshes full breakdown + same status chip  
 - Auto-reflect hook **desktop/OSC notification** when it writes MEMORY.md  
 
 ---
@@ -79,11 +80,10 @@ stateDiagram-v2
 
 | Horizon | Features |
 | --- | --- |
-| **Now** | % context bar, hover detail, `/stats`, learn notify, web docs |
-| **Next** | Live last-turn in/out/cache every sample (wire usage meta to UI) |
+| **Now** | % context bar, live last-turn in/out/cache every sample, hover detail, `/stats`, learn notify, web docs |
 | **Next** | Inline compaction banner with before/after tokens |
 | **Next** | Dual-stack model chips in status bar |
-| **Later** | Sparkline of context over turns; cost estimate live; pin “always show breakdown” |
+| **Later** | Sparkline of context over turns; cost estimate live; pin "always show breakdown" |
 | **Later** | Sound design for learn/compact (opt-in); theme packs (adamantium) |
 
 ---
