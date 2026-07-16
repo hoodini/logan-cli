@@ -383,6 +383,8 @@ pub enum RenderBlock {
     Btw(BtwBlock),
     /// `/context` snapshot with categorical bar + breakdown.
     ContextInfo(ContextInfoBlock),
+    /// `/stats` colorful API usage ledger.
+    TokenStats(crate::scrollback::blocks::TokenStatsBlock),
     /// Credit-limit card for max-tier users (red accent, single action).
     CreditLimit(CreditLimitBlock),
 }
@@ -402,6 +404,7 @@ macro_rules! delegate_block {
             RenderBlock::Subagent(b) => b.$method($($arg),*),
             RenderBlock::Btw(b) => b.$method($($arg),*),
             RenderBlock::ContextInfo(b) => b.$method($($arg),*),
+            RenderBlock::TokenStats(b) => b.$method($($arg),*),
             RenderBlock::CreditLimit(b) => b.$method($($arg),*),
         }
     };
@@ -773,6 +776,23 @@ impl RenderBlock {
         RenderBlock::ContextInfo(ContextInfoBlock::new(snapshot, model))
     }
 
+    /// `/context deep` - composition bar plus actual window text previews.
+    pub fn context_info_deep(
+        snapshot: xai_grok_shell::session::ContextInfo,
+        model: impl Into<String>,
+        deep: crate::scrollback::blocks::ContextDeepDive,
+    ) -> Self {
+        RenderBlock::ContextInfo(ContextInfoBlock::new(snapshot, model).with_deep(deep))
+    }
+
+    /// Colorful `/stats` token ledger.
+    pub fn token_stats(
+        stats: xai_grok_shell::session::SessionTokenStats,
+        model: impl Into<String>,
+    ) -> Self {
+        RenderBlock::TokenStats(crate::scrollback::blocks::TokenStatsBlock::new(stats, model))
+    }
+
     /// Create a session event block.
     pub fn session_event(event: SessionEvent) -> Self {
         RenderBlock::SessionEvent(SessionEventBlock::new(event))
@@ -1018,6 +1038,7 @@ impl RenderBlock {
             | RenderBlock::SessionEvent(_)
             | RenderBlock::ContextInfo(_)
             | RenderBlock::CreditLimit(_) => None,
+            RenderBlock::TokenStats(_) => Some(theme.accent_skill),
             RenderBlock::Btw(_) => Some(theme.accent_plan),
             RenderBlock::Stub(block) => Some(block.accent_color),
         }
@@ -1161,6 +1182,13 @@ impl RenderBlock {
                 Some(b.content().rendered_plain_text()),
             ]),
             RenderBlock::ContextInfo(b) => join_searchable([Some(b.model.clone())]),
+            RenderBlock::TokenStats(b) => join_searchable([
+                Some(b.model.clone()),
+                Some(format!(
+                    "in {} out {} cache {}",
+                    b.stats.input_tokens, b.stats.output_tokens, b.stats.cached_read_tokens
+                )),
+            ]),
             RenderBlock::CreditLimit(b) => {
                 join_searchable([Some(b.heading.clone()), Some(b.url.clone())])
             }

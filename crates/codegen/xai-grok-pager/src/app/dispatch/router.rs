@@ -878,7 +878,7 @@ pub(crate) fn dispatch(action: Action, app: &mut AppView) -> Vec<Effect> {
             dispatch_show_release_notes(app, title, content)
         }
         Action::RenameSession { title } => dispatch_rename_session(app, title),
-        Action::ShowContextInfo => dispatch_show_context_info(app),
+        Action::ShowContextInfo { deep } => dispatch_show_context_info(app, deep),
         Action::ShowUsage => dispatch_show_usage(app),
         Action::ShowQueue => dispatch_show_queue(app),
         Action::ShowTasks => dispatch_show_tasks(app),

@@ -15,8 +15,9 @@ Inside the TUI after any turn:
 
 | Command | What |
 | --- | --- |
-| `/stats` | input / output / cache / $ by model |
-| `/context` | window breakdown |
+| `/stats` | colorful API in / out / cache / $ by model |
+| `/context` | window bar + categories |
+| `/context deep` | **actual** system prompt + message texts for those tokens |
 | `/goal …` | autonomous goal loop |
 | `/mcp` | MCP servers |
 | `/skills` | discovered skills |

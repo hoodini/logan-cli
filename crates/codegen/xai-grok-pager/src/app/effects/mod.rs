@@ -3087,25 +3087,22 @@ pub(crate) fn execute(
                     }
                 });
         }
-        Effect::ShowContextInfo { agent_id, session_id } => {
+        Effect::ShowContextInfo {
+            agent_id,
+            session_id,
+            deep,
+        } => {
             let tx = acp_tx.clone();
-            tasks
-                .spawn(async move {
-                    match fetch_session_info(&session_id, &tx).await {
-                        Ok(info) => {
-                            TaskResult::ContextInfoComplete {
-                                agent_id,
-                                info: Box::new(info),
-                            }
-                        }
-                        Err(error) => {
-                            TaskResult::ContextInfoFailed {
-                                agent_id,
-                                error,
-                            }
-                        }
-                    }
-                });
+            tasks.spawn(async move {
+                match fetch_session_info(&session_id, &tx).await {
+                    Ok(info) => TaskResult::ContextInfoComplete {
+                        agent_id,
+                        info: Box::new(info),
+                        deep,
+                    },
+                    Err(error) => TaskResult::ContextInfoFailed { agent_id, error },
+                }
+            });
         }
         Effect::SendFeedback { agent_id, session_id, feedback_text } => {
             use xai_grok_shell::session::ClientType;

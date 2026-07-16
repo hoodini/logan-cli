@@ -56,6 +56,8 @@ pub struct ContextInfoBlock {
     pub snapshot: ContextInfo,
     /// Active model name at the time of capture (display-only).
     pub model: String,
+    /// Optional deep-dive: actual system prompt + message texts.
+    pub deep: Option<super::context_deep::ContextDeepDive>,
 }
 
 /// Shape of the categorical bar — how the 100 cells are laid out.
@@ -259,7 +261,14 @@ impl ContextInfoBlock {
         Self {
             snapshot,
             model: model.into(),
+            deep: None,
         }
+    }
+
+    /// Attach deep-dive text sections (system prompt + chat history previews).
+    pub fn with_deep(mut self, deep: super::context_deep::ContextDeepDive) -> Self {
+        self.deep = Some(deep);
+        self
     }
 
     /// Build the styled lines using the supplied theme and bar layout.
@@ -295,17 +304,14 @@ impl ContextInfoBlock {
             .fg(theme.text_primary)
             .add_modifier(Modifier::BOLD);
 
-        // Per-category colors used in both the bar and the legend so the
-        // two visualizations are scannable side-by-side. Messages get the
-        // brightest treatment (primary) — they dominate the breakdown and
-        // are the conversation the user is actually steering. System
-        // prompt uses the same diamond glyph as messages but in muted
-        // gray so it reads as a quiet base layer.
-        let system_color = quantize(theme.gray_bright); // gray
-        let tools_color = quantize(theme.accent_skill); // teal / skill accent
-        let messages_color = quantize(theme.text_primary); // primary (white)
+        // Vivid per-category colors so the bar + legend stand out.
+        // System=teal, messages=user accent, tools=success green,
+        // reasoning=violet, free=dim outline.
+        let system_color = quantize(theme.accent_skill); // teal
+        let tools_color = quantize(theme.accent_success); // green
+        let messages_color = quantize(theme.accent_user); // brand / user
         let empty_color = quantize(theme.gray_dim); // free / outline
-        let overhead_color = quantize(theme.accent_verify);
+        let overhead_color = quantize(theme.accent_verify); // violet
 
         // Categorical bar: 100 cells laid out as `bar.rows` rows of
         // `bar.row_len` cells with one space between cells. Each category
@@ -420,19 +426,28 @@ impl ContextInfoBlock {
         let layout = RowLayout::measure(legend_rows.iter().chain(info_rows.iter()), total);
         let label_style = Style::default().fg(theme.text_secondary);
 
+        let header_color = quantize(theme.text_primary);
+        let pct_color = if usage_pct >= snapshot.auto_compact_threshold_percent {
+            quantize(theme.warning)
+        } else if usage_pct >= 60 {
+            quantize(theme.accent_user)
+        } else {
+            quantize(theme.accent_success)
+        };
         let mut lines: Vec<Line<'static>> = vec![
-            // Header: bold white "Context"
-            Line::from(Span::styled("Context", primary)),
-            // Blank row between header and the at-a-glance summary
+            // Header: bold "Context" (+ deep tag when attached)
+            Line::from(Span::styled(
+                if self.deep.is_some() {
+                    "Context  ·  deep dive"
+                } else {
+                    "Context"
+                },
+                Style::default()
+                    .fg(header_color)
+                    .add_modifier(Modifier::BOLD),
+            )),
             Line::from(""),
-            // Sub-header: token totals + percent. Uses `text_secondary` for
-            // a touch more contrast than `muted` so the at-a-glance numbers
-            // stand apart from the breakdown/footer rows. Switches to "m"
-            // with one decimal place once a value reaches a million so wide
-            // context windows (e.g. 1m / 2m / 4m) read naturally. The
-            // percentage is recomputed from `used / total` so we get two
-            // decimal places of precision (the `usage_pct: u8` field on
-            // `ContextInfo` is pre-rounded to an integer).
+            // Big token totals - color tracks fill pressure
             Line::from(Span::styled(
                 format!(
                     "{} / {} tokens ({:.2}%)",
@@ -440,17 +455,16 @@ impl ContextInfoBlock {
                     fmt_tok_big(total),
                     precise_usage_percent(used, total),
                 ),
-                Style::default().fg(theme.text_secondary),
+                Style::default().fg(pct_color).add_modifier(Modifier::BOLD),
             )),
-            // Model name (one step dimmer than the tokens line so it reads
-            // as a supporting caption rather than the primary number).
             Line::from(Span::styled(
                 model.to_string(),
                 Style::default().fg(theme.gray_bright),
             )),
-            // Blank space before the bar
             Line::from(""),
         ];
+        // silence unused if primary not referenced later in some builds
+        let _ = primary;
         lines.extend(bar_lines);
         lines.push(Line::from(""));
         for row in &legend_rows {
@@ -521,6 +535,23 @@ impl ContextInfoBlock {
                 "Tip: run /compact to free up context space.".to_string(),
                 Style::default().fg(quantize(theme.warning)),
             )));
+        }
+
+        if self.deep.is_none() {
+            lines.push(Line::from(""));
+            lines.push(Line::from(Span::styled(
+                "Tip: /context deep  → actual system prompt + message texts",
+                muted,
+            )));
+            lines.push(Line::from(Span::styled(
+                "     /stats         → colorful API in/out/cache ledger",
+                muted,
+            )));
+        }
+
+        // Deep dive: real window text, color-coded by role
+        if let Some(ref dive) = self.deep {
+            super::context_deep::append_deep_lines(&mut lines, dive, theme);
         }
 
         lines

@@ -19,7 +19,7 @@ impl SlashCommand for StatsCommand {
     }
 
     fn description(&self) -> &str {
-        "Token stats: input, output, cache, cost by model"
+        "Colorful token stats: in / out / cache / $ by model"
     }
 
     fn session_scoped(&self) -> bool {

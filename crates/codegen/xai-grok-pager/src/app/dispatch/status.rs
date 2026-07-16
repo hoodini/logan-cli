@@ -227,7 +227,7 @@ fn push_system_to_any_agent(app: &mut AppView, msg: &str) {
 ///
 /// Produces Effect::ShowContextInfo which spawns an async ACP ext request.
 /// On completion, TaskResult::ContextInfoComplete shows the formatted info.
-pub(super) fn dispatch_show_context_info(app: &mut AppView) -> Vec<Effect> {
+pub(super) fn dispatch_show_context_info(app: &mut AppView, deep: bool) -> Vec<Effect> {
     let ActiveView::Agent(id) = app.active_view else {
         return vec![];
     };
@@ -241,6 +241,7 @@ pub(super) fn dispatch_show_context_info(app: &mut AppView) -> Vec<Effect> {
     vec![Effect::ShowContextInfo {
         agent_id: id,
         session_id,
+        deep,
     }]
 }
 
@@ -422,6 +423,7 @@ pub(super) fn handle_context_info_complete(
     app: &mut AppView,
     agent_id: AgentId,
     info: Box<xai_grok_shell::session::SessionInfoResponse>,
+    deep: bool,
 ) -> Vec<Effect> {
     if let Some(agent) = app.agents.get_mut(&agent_id) {
         let model = info.data.model.as_deref().unwrap_or("unknown").to_string();
@@ -433,11 +435,32 @@ pub(super) fn handle_context_info_complete(
         // copy", which matches the lifetime story.
         let snapshot = info.data.context;
         agent.apply_full_context_info(snapshot.clone());
-        agent
-            .scrollback
-            .push_block(crate::scrollback::block::RenderBlock::context_info(
-                snapshot, model,
-            ));
+        let session_id = info.session_id.clone();
+        let block = if deep {
+            let deep_dive =
+                crate::scrollback::blocks::load_context_deep_dive(&session_id);
+            match deep_dive {
+                Some(dive) => crate::scrollback::block::RenderBlock::context_info_deep(
+                    snapshot, model, dive,
+                ),
+                None => {
+                    // Fall back to summary + hint when session files missing.
+                    agent.scrollback.push_block(
+                        crate::scrollback::block::RenderBlock::context_info(snapshot, model),
+                    );
+                    agent.scrollback.push_block(
+                        crate::scrollback::block::RenderBlock::system(
+                            "Deep dive: no system_prompt.txt / chat_history.jsonl for this session yet.\n\
+                             Run a turn first, then /context deep again.",
+                        ),
+                    );
+                    return vec![];
+                }
+            }
+        } else {
+            crate::scrollback::block::RenderBlock::context_info(snapshot, model)
+        };
+        agent.scrollback.push_block(block);
     }
     vec![]
 }

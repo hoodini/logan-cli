@@ -711,10 +711,46 @@ pub(super) fn dispatch_task_result(result: TaskResult, app: &mut AppView) -> Vec
                             cached_read_tokens: stats.cached_read_tokens,
                             reasoning_tokens: stats.reasoning_tokens,
                         });
+                    // Colorful /stats block (standout numbers) when ledger present.
+                    let model = info
+                        .data
+                        .model
+                        .as_deref()
+                        .unwrap_or("unknown")
+                        .to_string();
+                    let mut block = crate::scrollback::blocks::TokenStatsBlock::new(
+                        stats.clone(),
+                        model,
+                    );
+                    if let Some(last) = agent.last_api_usage.as_ref() {
+                        block = block.with_last_call(
+                            last.input_tokens,
+                            last.output_tokens,
+                            last.cached_read_tokens,
+                        );
+                    }
+                    agent.scrollback.push_block(
+                        crate::scrollback::block::RenderBlock::TokenStats(block),
+                    );
+                    // Keep plain session meta (cwd / id) as a compact system line.
+                    if !text.trim().is_empty() {
+                        // Strip the old plain token section if present - show only meta.
+                        let meta_only = text
+                            .lines()
+                            .take_while(|l| !l.contains("Token stats"))
+                            .collect::<Vec<_>>()
+                            .join("\n");
+                        if !meta_only.trim().is_empty() {
+                            agent.scrollback.push_block(
+                                crate::scrollback::block::RenderBlock::system(meta_only),
+                            );
+                        }
+                    }
+                } else {
+                    agent
+                        .scrollback
+                        .push_block(crate::scrollback::block::RenderBlock::system(text));
                 }
-                agent
-                    .scrollback
-                    .push_block(crate::scrollback::block::RenderBlock::system(text));
             }
             vec![]
         }
@@ -774,9 +810,11 @@ pub(super) fn dispatch_task_result(result: TaskResult, app: &mut AppView) -> Vec
             app.show_toast(&format!("Couldn't delete session: {error}"));
             vec![]
         }
-        TaskResult::ContextInfoComplete { agent_id, info } => {
-            handle_context_info_complete(app, agent_id, info)
-        }
+        TaskResult::ContextInfoComplete {
+            agent_id,
+            info,
+            deep,
+        } => handle_context_info_complete(app, agent_id, info, deep),
         TaskResult::ContextInfoFailed { agent_id, error } => {
             if let Some(agent) = app.agents.get_mut(&agent_id) {
                 agent

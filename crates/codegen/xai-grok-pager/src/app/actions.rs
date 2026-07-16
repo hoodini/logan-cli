@@ -628,7 +628,10 @@ pub enum Action {
         title: String,
     },
     /// Show detailed context usage (progress bar, token breakdown, stats).
-    ShowContextInfo,
+    /// When `deep` is true, also attach actual system prompt + message previews.
+    ShowContextInfo {
+        deep: bool,
+    },
     /// Show credit usage via /usage command.
     ShowUsage,
     /// Commit a read-only list of the queued prompts as a system block
@@ -1798,6 +1801,7 @@ pub enum Effect {
     ShowContextInfo {
         agent_id: AgentId,
         session_id: acp::SessionId,
+        deep: bool,
     },
     /// Fetch current bundle cache status via `x.ai/bundle/status`.
     FetchBundleStatus,
@@ -2447,6 +2451,7 @@ pub enum TaskResult {
     ContextInfoComplete {
         agent_id: AgentId,
         info: Box<xai_grok_shell::session::SessionInfoResponse>,
+        deep: bool,
     },
     /// Context info fetch failed.
     ContextInfoFailed {
