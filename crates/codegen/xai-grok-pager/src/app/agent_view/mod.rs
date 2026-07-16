@@ -703,6 +703,15 @@ impl ParkedMarkerSlot {
         }
     }
 }
+/// Snapshot of the most recent model call for live status-bar breakdown.
+#[derive(Debug, Clone, Default)]
+pub struct LastApiUsage {
+    pub input_tokens: u64,
+    pub output_tokens: u64,
+    pub cached_read_tokens: u64,
+    pub reasoning_tokens: u64,
+}
+
 pub struct AgentView {
     pub session: AgentSession,
     pub scrollback: ScrollbackState,
@@ -828,6 +837,8 @@ pub struct AgentView {
     pub(crate) modal_hovered_key: Option<char>,
     /// Cached server-reported context state.
     pub context_state: Option<xai_grok_shell::session::ContextInfo>,
+    /// Last completed model-call usage (input/output/cache) for live status bar.
+    pub last_api_usage: Option<LastApiUsage>,
     /// Gateway light-frontend session (`kind: "chat"` / `--chat` / conversation
     /// resume). Suppresses Build credits / local sampler context telemetry so the
     /// status bar and prompt never imply remote usage from wrong metrics.

@@ -146,22 +146,43 @@ logan --route tier-local -p "Offline review"
 # mid-session: /skill auto-route
 ```
 
-### Token visibility
+### Token visibility (live UX)
+
+Status bar (always on):
+
+```text
+24K / 200K 12%     ← window fill + % (turns yellow/red near compact)
+⚠                  ← appears when fill ≥ auto-compact threshold
+```
+
+Hover context chip:
+
+```text
+sys 4.2K · msg 18K · tools 14K · free 163K · last in 2.4K out 180 cache 1.2K · compact@85%
+```
 
 ```bash
 # In TUI
-/context          # window composition (system / messages / tools / free)
+/context          # full window composition card
 /stats            # API usage: input · output · cache · $ · by model
 /session-info     # session rollup (includes token stats)
 /usage            # product credits when applicable
 
-# Dump real system_prompt.txt from latest session
+# After quit: auto-reflect hook can notify "Logan learned" (OSC + macOS)
 examples/scripts/dump-prompt-journey.sh
-
-# As another agent (JSON + ledger)
-examples/scripts/logan-call.sh "Run tests and fix failures"
-python3 examples/scripts/usage-rollup.py --by-model
 ```
+
+### Web search + dual stack (Grok + your LLM)
+
+Logan can code with **Claude/OpenAI/Ollama** while still searching via **Grok Build / xAI Responses** (or any Responses-capable search model):
+
+```toml
+[models]
+default = "claude-sonnet"
+web_search = "grok-search"
+```
+
+Full explanation: **[docs/WEB_SEARCH.md](docs/WEB_SEARCH.md)**
 
 ### Logan as a tool for other agents (remote)
 
@@ -331,7 +352,9 @@ Repo diagrams are also plain files you can open on [excalidraw.com](https://exca
 | Doc | Contents |
 | --- | --- |
 | [docs/FEATURES.md](docs/FEATURES.md) | Goals, tokens, auto-route, LiteLLM/Langfuse, remote agent |
-| [docs/PROMPT_JOURNEY_WALKTHROUGH.md](docs/PROMPT_JOURNEY_WALKTHROUGH.md) | **Real example**: system prompt + context window |
+| [docs/PROMPT_JOURNEY_WALKTHROUGH.md](docs/PROMPT_JOURNEY_WALKTHROUGH.md) | **Real example**: system prompt + context window + tokens |
+| [docs/WEB_SEARCH.md](docs/WEB_SEARCH.md) | How online search works · dual-stack Grok + Claude |
+| [docs/UX_VISION.md](docs/UX_VISION.md) | Live tokens, compact warnings, learn notifications |
 | [docs/MODEL_ROUTING.md](docs/MODEL_ROUTING.md) | Models per skill / subagent / role |
 | [docs/AUTOMATIONS.md](docs/AUTOMATIONS.md) | `/loop`, scheduler, cron, launchd, Windows |
 | [docs/REMOTE_AGENT.md](docs/REMOTE_AGENT.md) | Call Logan from other AIs / HTTP |

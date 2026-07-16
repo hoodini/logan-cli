@@ -192,6 +192,20 @@ pub fn context_bar_line(
     context_bar_line_for_session(used_tokens, total_tokens, hovered, theme, false)
 }
 
+/// Optional window composition for richer status-bar / hover UX.
+#[derive(Debug, Clone, Copy, Default)]
+pub struct ContextBarDetail {
+    pub system_tokens: Option<u64>,
+    pub message_tokens: Option<u64>,
+    pub tool_def_tokens: Option<u64>,
+    pub free_tokens: Option<u64>,
+    pub compact_at_pct: Option<u8>,
+    /// Last model call (when known).
+    pub last_input: Option<u64>,
+    pub last_output: Option<u64>,
+    pub last_cache_read: Option<u64>,
+}
+
 /// Like [`context_bar_line`], but omits the bar for gateway/chat-kind sessions.
 pub fn context_bar_line_for_session(
     used_tokens: Option<u64>,
@@ -200,6 +214,18 @@ pub fn context_bar_line_for_session(
     theme: &Theme,
     gateway_chat: bool,
 ) -> Option<Line<'static>> {
+    context_bar_line_detailed(used_tokens, total_tokens, hovered, theme, gateway_chat, None)
+}
+
+/// Rich context bar: always shows fill %, hover shows composition + last-call.
+pub fn context_bar_line_detailed(
+    used_tokens: Option<u64>,
+    total_tokens: Option<u64>,
+    hovered: bool,
+    theme: &Theme,
+    gateway_chat: bool,
+    detail: Option<ContextBarDetail>,
+) -> Option<Line<'static>> {
     if gateway_chat {
         return None;
     }
@@ -207,9 +233,23 @@ pub fn context_bar_line_for_session(
     let total = total_tokens.filter(|&t| t > 0)?;
     let pct = xai_token_estimation::usage_percentage(used, total);
 
-    // Default form drives the line width: `used / total`, right-padded to the
-    // minimum hover width so the two states always render at the same width.
-    let mut token_str = format!("{} / {}", fmt_tokens(used), fmt_tokens(total));
+    let breakpoints = default_breakpoints(theme);
+    let color = crate::theme::quantize(blend_color(pct, &breakpoints));
+
+    // Default: `24K/200K 12%` — live fill always visible (Logan UX).
+    let mut token_str = format!(
+        "{} / {} {}",
+        fmt_tokens(used),
+        fmt_tokens(total),
+        fmt_pct5(pct).trim()
+    );
+    // Near compact threshold: pulse warning glyph
+    if let Some(thr) = detail.and_then(|d| d.compact_at_pct) {
+        if pct >= thr as f64 {
+            token_str.push_str(" ⚠");
+        }
+    }
+
     let natural_width = token_str.chars().count() as u16;
     let min_width = BAR_PCT_GAP + PCT_WIDTH;
     if natural_width < min_width {
@@ -217,15 +257,44 @@ pub fn context_bar_line_for_session(
     }
     let total_width = natural_width.max(min_width);
 
-    // Urgency color shared by both branches so the default still surfaces
-    // high-usage warnings without requiring the user to hover.
-    let breakpoints = default_breakpoints(theme);
-    let color = crate::theme::quantize(blend_color(pct, &breakpoints));
-
     if hovered {
-        // Bar fills the space the default tokens would occupy, minus the gap
-        // and the percentage. `total_width >= min_width` by construction, so
-        // this subtraction is safe.
+        // Prefer rich composition string when we have detail; else classic bar.
+        if let Some(d) = detail {
+            let mut parts = Vec::new();
+            if let Some(s) = d.system_tokens {
+                parts.push(format!("sys {}", fmt_tokens(s)));
+            }
+            if let Some(m) = d.message_tokens {
+                parts.push(format!("msg {}", fmt_tokens(m)));
+            }
+            if let Some(t) = d.tool_def_tokens {
+                parts.push(format!("tools {}", fmt_tokens(t)));
+            }
+            if let Some(f) = d.free_tokens {
+                parts.push(format!("free {}", fmt_tokens(f)));
+            }
+            if d.last_input.is_some() || d.last_output.is_some() {
+                let li = d.last_input.unwrap_or(0);
+                let lo = d.last_output.unwrap_or(0);
+                let lc = d.last_cache_read.unwrap_or(0);
+                parts.push(format!(
+                    "last in {} out {} cache {}",
+                    fmt_tokens(li),
+                    fmt_tokens(lo),
+                    fmt_tokens(lc)
+                ));
+            }
+            if let Some(thr) = d.compact_at_pct {
+                parts.push(format!("compact@{thr}%"));
+            }
+            if !parts.is_empty() {
+                let rich = parts.join(" · ");
+                return Some(Line::from(Span::styled(
+                    rich,
+                    Style::default().fg(color).bg(theme.bg_base),
+                )));
+            }
+        }
         let bar_width = total_width - min_width;
         let mut spans =
             progress_bar_spans(bar_width, pct as f32 / 100.0, color, theme.bg_highlight);

@@ -702,6 +702,16 @@ pub(super) fn dispatch_task_result(result: TaskResult, app: &mut AppView) -> Vec
                     modal.active_agent = info.data.agent_name.clone();
                 }
                 agent.apply_full_context_info(info.data.context);
+                // Live status bar: show session API usage (in/out/cache) after /stats or /session-info
+                if let Some(stats) = &info.data.token_stats {
+                    agent.last_api_usage =
+                        Some(crate::app::agent_view::LastApiUsage {
+                            input_tokens: stats.input_tokens,
+                            output_tokens: stats.output_tokens,
+                            cached_read_tokens: stats.cached_read_tokens,
+                            reasoning_tokens: stats.reasoning_tokens,
+                        });
+                }
                 agent
                     .scrollback
                     .push_block(crate::scrollback::block::RenderBlock::system(text));

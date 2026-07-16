@@ -81,8 +81,34 @@ def main() -> int:
         text = text[:180_000] + "\n\n<!-- truncated by auto-reflect.py -->\n"
     memory_md.write_text(text.rstrip() + "\n" + block, encoding="utf-8")
 
-    # Passive hook: informational stdout only
-    print(json.dumps({"ok": True, "wrote": str(memory_md), "event": event_name}))
+    # Desktop / terminal notification so the user sees self-learning fire
+    title = "Logan learned"
+    body = f"Reflection saved ({event_name}). Check MEMORY.md · /stats for usage."
+    # Prefer stderr for OSC so JSON stdout stays clean for hook runners
+    try:
+        sys.stderr.write(f"\033]9;{title}: {body}\033\\")
+        sys.stderr.write(f"\033]777;notify;{title};{body}\033\\")
+        sys.stderr.flush()
+    except Exception:
+        pass
+    if sys.platform == "darwin":
+        try:
+            import subprocess
+
+            safe_body = body.replace('"', "'")
+            subprocess.run(
+                [
+                    "osascript",
+                    "-e",
+                    f'display notification "{safe_body}" with title "{title}"',
+                ],
+                check=False,
+                capture_output=True,
+            )
+        except Exception:
+            pass
+
+    print(json.dumps({"ok": True, "wrote": str(memory_md), "event": event_name, "notified": True}))
     return 0
 
 

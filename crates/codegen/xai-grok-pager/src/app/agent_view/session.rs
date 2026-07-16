@@ -91,6 +91,7 @@ impl AgentView {
             modal_buttons: Vec::new(),
             modal_hovered_key: None,
             context_state: None,
+            last_api_usage: None,
             chat_kind: false,
             app_chat_mode: false,
             credit_balance: None,

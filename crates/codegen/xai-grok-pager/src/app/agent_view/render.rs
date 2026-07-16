@@ -1170,12 +1170,27 @@ impl AgentView {
             .as_ref()
             .and_then(|c| (c.total > 0).then_some(c.total))
             .or(model_window);
-        if let Some(ctx_line) = context_bar::context_bar_line_for_session(
+        let ctx_detail = self.context_state.as_ref().map(|c| {
+            let last = self.last_api_usage.as_ref();
+            context_bar::ContextBarDetail {
+                system_tokens: (c.system_prompt_tokens > 0).then_some(c.system_prompt_tokens),
+                message_tokens: (c.message_tokens > 0).then_some(c.message_tokens),
+                tool_def_tokens: (c.tool_definitions_tokens > 0)
+                    .then_some(c.tool_definitions_tokens),
+                free_tokens: (c.free_tokens > 0).then_some(c.free_tokens),
+                compact_at_pct: Some(c.auto_compact_threshold_percent),
+                last_input: last.map(|u| u.input_tokens),
+                last_output: last.map(|u| u.output_tokens),
+                last_cache_read: last.map(|u| u.cached_read_tokens),
+            }
+        });
+        if let Some(ctx_line) = context_bar::context_bar_line_detailed(
             ctx_used,
             ctx_total,
             self.hit_context.hovered,
             &theme,
             self.chat_kind,
+            ctx_detail,
         ) {
             status.push("context", ctx_line);
         }
