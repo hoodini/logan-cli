@@ -170,7 +170,7 @@ impl SessionEvent {
                 format!("Turn failed: {error}")
             }
             SessionEvent::CompactionStarted { percentage } => {
-                format!("Context {percentage}% full. Compacting…")
+                format!("Compacting context ({percentage}% full)…")
             }
             SessionEvent::CompactionCompleted {
                 tokens_before,
@@ -178,19 +178,25 @@ impl SessionEvent {
                 elapsed_ms,
             } => {
                 let after = format_tokens(*tokens_after);
-                // Older shells don't send tokens_before — keep the legacy format.
+                // Always show before → after when known (Logan UX: never hide cost).
                 let body = match tokens_before {
                     Some(before) if *before > 0 => {
-                        format!(
-                            "Context compacted: {} → {after} tokens",
-                            format_tokens(*before)
-                        )
+                        let before_s = format_tokens(*before);
+                        let saved = before.saturating_sub(*tokens_after);
+                        if saved > 0 {
+                            format!(
+                                "Compacted {before_s} → {after} (saved {})",
+                                format_tokens(saved)
+                            )
+                        } else {
+                            format!("Compacted {before_s} → {after}")
+                        }
                     }
-                    _ => format!("Context compacted → {after} tokens"),
+                    _ => format!("Compacted → {after}"),
                 };
                 if let Some(ms) = elapsed_ms {
                     let secs = *ms as f64 / 1000.0;
-                    format!("{body} ({secs:.1}s)")
+                    format!("{body} in {secs:.1}s")
                 } else {
                     body
                 }

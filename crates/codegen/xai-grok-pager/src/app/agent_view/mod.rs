@@ -839,6 +839,10 @@ pub struct AgentView {
     pub context_state: Option<xai_grok_shell::session::ContextInfo>,
     /// Last completed model-call usage (input/output/cache) for live status bar.
     pub last_api_usage: Option<LastApiUsage>,
+    /// Configured web_search model id (dual-stack status chip).
+    pub web_search_model: Option<String>,
+    /// Connected MCP server count for status chip (None = unknown / still init).
+    pub mcp_server_count: Option<usize>,
     /// Gateway light-frontend session (`kind: "chat"` / `--chat` / conversation
     /// resume). Suppresses Build credits / local sampler context telemetry so the
     /// status bar and prompt never imply remote usage from wrong metrics.

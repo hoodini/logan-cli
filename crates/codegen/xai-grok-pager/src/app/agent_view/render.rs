@@ -31,6 +31,27 @@ use ratatui::text::{Line, Span};
 use ratatui::widgets::Widget;
 use std::collections::HashSet;
 use std::time::Instant;
+
+/// Shorten model ids for the dual-stack status chip (`claude-sonnet-4-5` → `claude-sonnet`).
+fn short_model_label(name: &str) -> String {
+    let s = name.trim();
+    if s.is_empty() {
+        return "model".into();
+    }
+    // Drop common provider prefixes / version suffixes for glanceability.
+    let s = s
+        .strip_prefix("models/")
+        .or_else(|| s.strip_prefix("openai/"))
+        .or_else(|| s.strip_prefix("anthropic/"))
+        .unwrap_or(s);
+    let chars: String = s.chars().take(18).collect();
+    if s.chars().count() > 18 {
+        format!("{chars}…")
+    } else {
+        chars
+    }
+}
+
 impl AgentView {
     pub(crate) fn update_scrollback_selection_state(
         &mut self,
@@ -1137,6 +1158,35 @@ impl AgentView {
                 plan_style = plan_style.add_modifier(ratatui::style::Modifier::BOLD);
             }
             status.push("plan", Line::from(Span::styled("plan", plan_style)));
+        }
+        // Dual-stack chip: coding model + optional search model + mcp count.
+        {
+            let model_short = self
+                .session
+                .models
+                .current_model_name()
+                .or_else(|| {
+                    self.session
+                        .models
+                        .current_model_id_str()
+                        .map(|s| s.to_string())
+                })
+                .unwrap_or_else(|| "model".into());
+            let model_short = short_model_label(&model_short);
+            let mut stack = format!("m {model_short}");
+            if let Some(ref search) = self.web_search_model {
+                let s = short_model_label(search);
+                if s != model_short {
+                    stack.push_str(&format!(" · s {s}"));
+                }
+            }
+            if let Some(n) = self.mcp_server_count {
+                stack.push_str(&format!(" · mcp {n}"));
+            }
+            let stack_style = Style::default()
+                .fg(theme.text_secondary)
+                .bg(theme.bg_base);
+            status.push("stack", Line::from(Span::styled(stack, stack_style)));
         }
         if let Some(ref goal) = self.goal_state {
             let tick = self.tasks.tick_count() as usize;

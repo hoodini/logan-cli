@@ -24,6 +24,18 @@ use crate::scrollback::state::ScrollbackState;
 use agent_client_protocol as acp;
 use std::time::Instant;
 use xai_grok_shell::sampling::types::ReasoningEffort;
+
+/// Read `[models] web_search = "…"` from effective config for the dual-stack chip.
+fn load_configured_web_search_model() -> Option<String> {
+    let root = xai_grok_shell::config::load_effective_config().ok()?;
+    let models = root.get("models")?;
+    models
+        .get("web_search")
+        .and_then(|v| v.as_str())
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+}
+
 /// A deferred model switch to apply once the session exists, plus any effort
 /// error to surface. `switch` is still populated when a `-m` model was stashed
 /// even if the effort token failed, so an invalid effort never drops the CLI
@@ -350,6 +362,10 @@ pub(in crate::app::dispatch) fn dispatch_new_session_inner_with_id(
             .registry_mut()
             .set_plugins_visible(!app.appearance.disable_plugins);
         agent.active_pane = ActivePane::Prompt;
+        // Dual-stack chip: surface configured web_search model when present.
+        if agent.web_search_model.is_none() {
+            agent.web_search_model = load_configured_web_search_model();
+        }
     }
     switch_to_agent(app, agent_id, SwitchCause::New);
     if app.screen_mode.is_minimal() {

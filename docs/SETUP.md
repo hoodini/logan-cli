@@ -4,16 +4,21 @@ For humans **and** for coding agents / LLMs installing Logan on a machine.
 
 **Author:** Yuval Avidani (YUV.AI) - https://yuv.ai · GitHub [@hoodini](https://github.com/hoodini)
 
+> **TL;DR (preferred):** from the repo root run  
+> `bash scripts/install-logan.sh`  
+> then `logan login` and `logan`.  
+> One-page guide: **[START_HERE.md](START_HERE.md)** · LLM paste prompt: **[LLM_INSTALL_PROMPT.md](LLM_INSTALL_PROMPT.md)**
+
 ---
 
 ## 0. Goal checklist
 
 After this guide you should have:
 
-1. `logan` on PATH  
-2. `~/.logan/config.toml` with memory + at least one LLM  
-3. Optional: Excalidraw MCP + auto-reflection hooks  
-4. A first successful prompt
+1. `logan` on PATH (`~/.local/bin` **and** `~/.logan/bin` - same binary)  
+2. `~/.logan/config.toml` with memory + compat skills/MCP  
+3. Auth via `logan login` (xAI / same as Grok Build) or `XAI_API_KEY`  
+4. A first successful prompt + `/stats` in the TUI  
 
 ---
 

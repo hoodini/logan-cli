@@ -126,6 +126,30 @@ pub(super) fn handle_mcp_tools_changed(notif: &acp::ExtNotification, app: &mut A
         redraw |= is_active;
     }
 
+    // Dual-stack status chip: count servers when tools payload lists them.
+    if let Some(agent) = app.agents.get_mut(&id) {
+        #[derive(serde::Deserialize)]
+        #[serde(rename_all = "camelCase")]
+        struct ToolsPayload {
+            #[serde(default)]
+            server_name: Option<String>,
+            #[serde(default)]
+            servers: Option<Vec<serde_json::Value>>,
+            #[serde(default)]
+            tools: Option<Vec<serde_json::Value>>,
+        }
+        if let Ok(p) = serde_json::from_str::<ToolsPayload>(notif.params.get()) {
+            if let Some(servers) = p.servers {
+                agent.mcp_server_count = Some(servers.len());
+                redraw |= is_active;
+            } else if p.server_name.is_some() || p.tools.is_some() {
+                // At least one server is live; bump from None → 1 if unknown.
+                agent.mcp_server_count = Some(agent.mcp_server_count.unwrap_or(0).max(1));
+                redraw |= is_active;
+            }
+        }
+    }
+
     // Modal refresh: schedule a debounced refetch for the OWNING agent
     // (routed by sessionId — was active_view), per-agent coalesced.
     let modal_open = app

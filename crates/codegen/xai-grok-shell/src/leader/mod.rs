@@ -1337,7 +1337,7 @@ pub async fn connect_or_spawn(
 ///
 /// For a **managed install** — the running binary lives under `grok_home`
 /// (e.g. `~/.logan/...`) — prefer the managed `~/.logan/bin/logan` symlink. After an
-/// auto-update or `grok update` atomically swaps that symlink, `current_exe()`
+/// auto-update or `logan update` atomically swaps that symlink, `current_exe()`
 /// still resolves (via `/proc/self/exe` on Linux) to the *old* versioned target,
 /// so spawning it would relaunch the stale binary. The symlink always points to
 /// the freshly-installed version. This mirrors

@@ -80,9 +80,10 @@ stateDiagram-v2
 
 | Horizon | Features |
 | --- | --- |
-| **Now** | % context bar, live last-turn in/out/cache every sample, hover detail, `/stats`, learn notify, web docs |
-| **Next** | Inline compaction banner with before/after tokens |
-| **Next** | Dual-stack model chips in status bar |
+| **Now** | % context bar, live last-turn in/out/cache every sample (incl. mid-tool window fill), hover detail, `/stats`, learn notify, web docs |
+| **Now** | Dual-stack status chips: `m <model> · s <search> · mcp N` |
+| **Now** | Inline compaction banner with before → after + saved tokens |
+| **Now** | Auto skills from `~/.logan` + `~/.grok` + claude/cursor/agents; auto MCP from config + `.mcp.json` + cursor/claude |
 | **Later** | Sparkline of context over turns; cost estimate live; pin "always show breakdown" |
 | **Later** | Sound design for learn/compact (opt-in); theme packs (adamantium) |
 

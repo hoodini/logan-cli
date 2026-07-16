@@ -92,6 +92,8 @@ impl AgentView {
             modal_hovered_key: None,
             context_state: None,
             last_api_usage: None,
+            web_search_model: None,
+            mcp_server_count: None,
             chat_kind: false,
             app_chat_mode: false,
             credit_balance: None,

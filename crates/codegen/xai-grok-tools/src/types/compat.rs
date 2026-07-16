@@ -365,7 +365,9 @@ impl CompatConfig {
     /// in `collect_skill_config_dirs`. When all cells are on, the returned
     /// list is identical to the historical constant.
     pub fn skill_config_dirs(&self) -> Vec<&'static str> {
-        let mut dirs = vec![".logan", ".agents"];
+        // `.logan` is primary; `.grok` kept so skills left under the Grok Build
+        // home/project layout still load without a manual copy.
+        let mut dirs = vec![".logan", ".grok", ".agents"];
         if self.claude.skills {
             dirs.push(".claude");
         }
@@ -511,10 +513,10 @@ mod tests {
 
     #[test]
     fn skill_config_dirs_all_on_matches_legacy_constant() {
-        // Historical constant was `[".logan", ".agents", ".claude", ".cursor"]`.
+        // Logan primary + legacy `.grok` + vendor dirs when all cells are on.
         assert_eq!(
             CompatConfig::default().skill_config_dirs(),
-            vec![".logan", ".agents", ".claude", ".cursor"]
+            vec![".logan", ".grok", ".agents", ".claude", ".cursor"]
         );
     }
 
@@ -522,15 +524,21 @@ mod tests {
     fn skill_config_dirs_gates_each_vendor() {
         let mut c = CompatConfig::default();
         c.cursor.skills = false;
-        assert_eq!(c.skill_config_dirs(), vec![".logan", ".agents", ".claude"]);
+        assert_eq!(
+            c.skill_config_dirs(),
+            vec![".logan", ".grok", ".agents", ".claude"]
+        );
 
         c.claude.skills = false;
-        assert_eq!(c.skill_config_dirs(), vec![".logan", ".agents"]);
+        assert_eq!(c.skill_config_dirs(), vec![".logan", ".grok", ".agents"]);
 
         // Only the `cursor` cell on (`claude` off): `cursor` still appended last.
         let mut c2 = CompatConfig::default();
         c2.claude.skills = false;
-        assert_eq!(c2.skill_config_dirs(), vec![".logan", ".agents", ".cursor"]);
+        assert_eq!(
+            c2.skill_config_dirs(),
+            vec![".logan", ".grok", ".agents", ".cursor"]
+        );
     }
 
     #[test]

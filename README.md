@@ -31,9 +31,17 @@
 </p>
 
 ```sh
+# Install (from this repo) - builds, installs PATH + managed binary, seeds config
+bash scripts/install-logan.sh
+export PATH="$HOME/.local/bin:$PATH"
+logan login          # same xAI OIDC as Grok Build
+logan                # TUI · /stats · /context · /goal
+
 logan --version
-# Logan TUI by Yuval Avidani (YUV.AI) - https://yuv.ai
+# Logan by Yuval Avidani (YUV.AI) - v…
 ```
+
+**Start here:** [docs/START_HERE.md](docs/START_HERE.md) · **LLM install prompt:** [docs/LLM_INSTALL_PROMPT.md](docs/LLM_INSTALL_PROMPT.md)
 
 | | |
 | --- | --- |

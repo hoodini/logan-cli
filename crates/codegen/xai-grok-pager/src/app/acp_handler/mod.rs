@@ -241,6 +241,26 @@ pub(crate) fn handle(msg: AcpClientMessage, app: &mut AppView) -> bool {
                     if !dedup_drop {
                         if let Some(tokens) = meta.total_tokens {
                             confirm_context_used(agent, tokens);
+                            // Mid-tool-loop: keep the live "in" chip in sync with
+                            // window fill so the status bar moves every sample
+                            // delta, not only after PromptResponse.
+                            match agent.last_api_usage.as_mut() {
+                                Some(u) => {
+                                    // Prefer growing window fill as live input.
+                                    if tokens > u.input_tokens {
+                                        u.input_tokens = tokens;
+                                    }
+                                }
+                                None => {
+                                    agent.last_api_usage =
+                                        Some(crate::app::agent_view::LastApiUsage {
+                                            input_tokens: tokens,
+                                            output_tokens: 0,
+                                            cached_read_tokens: 0,
+                                            reasoning_tokens: 0,
+                                        });
+                                }
+                            }
                         }
                         if let Some(ts) = meta.turn_start_ms {
                             agent.turn_start_ms = Some(ts);

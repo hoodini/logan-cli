@@ -24,7 +24,11 @@ token visibility, auto-routing, goals, observability, and remote-agent use.
 | **Memory / self-improve** | **Yes (Logan)** | Memory + dream + skills + auto-reflect hooks |
 | **Smart auto model routing** | **`--route auto` shipped** | Heuristic classifier → `tier-*` before sample; skill still available |
 | **`/stats`** | **Shipped** | Session ledger: input/output/cache/reasoning/cost by model |
-| **Live status bar last-turn** | **Shipped** | Every sample updates context bar: `in / out / c` from `PromptResponse._meta` (no `/stats` required) |
+| **Live status bar last-turn** | **Shipped** | Every sample updates context bar: `in / out / c` from `PromptResponse._meta` (no `/stats` required); mid-tool-loop window fill too |
+| **Dual-stack status chips** | **Shipped** | `m <model> · s <search> · mcp N` on status bar |
+| **Compaction before/after** | **Shipped** | Scrollback banner: `Compacted 90K → 24K (saved 66K) in 1.2s` |
+| **Auto skills + MCP** | **Shipped** | Skills: `~/.logan`, `~/.grok`, claude/cursor/agents. MCP: config.toml, `.mcp.json`, cursor/claude |
+| **One-command install** | **Shipped** | `bash scripts/install-logan.sh` + [LLM_INSTALL_PROMPT.md](LLM_INSTALL_PROMPT.md) |
 
 ---
 

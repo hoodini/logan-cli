@@ -199,12 +199,13 @@ pub fn collect_skill_config_dirs(
         }
     }
 
-    // Priority 3: Global user dirs. `.grok` comes from `grok_home` (which may
-    // be overridden), so it's handled separately; `.agents` is always added,
-    // while `.claude`/`.cursor` are gated by the skills compat cells.
+    // Priority 3: Global user dirs. `global_dir` is `~/.logan` (or LOGAN_HOME).
+    // Also scan `~/.grok` so skills installed for Grok Build still load.
+    // `.agents` always; `.claude`/`.cursor` gated by compat cells.
     try_add(grok_home);
     #[allow(deprecated)]
     if let Some(home) = std::env::home_dir() {
+        try_add(home.join(".grok"));
         try_add(home.join(".agents"));
         if compat.claude.skills {
             try_add(home.join(".claude"));
