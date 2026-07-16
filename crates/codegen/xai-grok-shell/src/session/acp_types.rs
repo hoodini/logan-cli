@@ -490,8 +490,71 @@ fn default_auto_compact_threshold() -> u8 {
     DEFAULT_AUTO_COMPACT_THRESHOLD_PERCENT
 }
 
+/// Per-model token spend for `/stats` (session ledger).
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct ModelTokenStats {
+    pub model: String,
+    pub input_tokens: u64,
+    pub output_tokens: u64,
+    pub cached_read_tokens: u64,
+    pub reasoning_tokens: u64,
+    pub model_calls: u64,
+    /// Cost in USD when the provider reported ticks (1e10 ticks = $1).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cost_usd: Option<f64>,
+}
+
+/// Session-level API usage rollup (input / output / cache / $ by model).
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct SessionTokenStats {
+    pub input_tokens: u64,
+    pub output_tokens: u64,
+    pub cached_read_tokens: u64,
+    pub reasoning_tokens: u64,
+    pub model_calls: u64,
+    pub main_loop_model_calls: u64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cost_usd: Option<f64>,
+    pub cost_partial: bool,
+    pub incomplete: bool,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub by_model: Vec<ModelTokenStats>,
+}
+
+impl SessionTokenStats {
+    pub fn from_ledger(ledger: &xai_chat_state::UsageLedger) -> Self {
+        let ticks_to_usd = |t: Option<i64>| t.map(|v| v as f64 / 10_000_000_000.0);
+        Self {
+            input_tokens: ledger.totals.input_tokens,
+            output_tokens: ledger.totals.output_tokens,
+            cached_read_tokens: ledger.totals.cached_read_tokens,
+            reasoning_tokens: ledger.totals.reasoning_tokens,
+            model_calls: ledger.totals.model_calls,
+            main_loop_model_calls: ledger.main_loop_model_calls,
+            cost_usd: ticks_to_usd(ledger.totals.cost_usd_ticks),
+            cost_partial: ledger.totals.cost_is_partial(),
+            incomplete: ledger.incomplete,
+            by_model: ledger
+                .by_model
+                .iter()
+                .map(|(model, t)| ModelTokenStats {
+                    model: model.clone(),
+                    input_tokens: t.input_tokens,
+                    output_tokens: t.output_tokens,
+                    cached_read_tokens: t.cached_read_tokens,
+                    reasoning_tokens: t.reasoning_tokens,
+                    model_calls: t.model_calls,
+                    cost_usd: ticks_to_usd(t.cost_usd_ticks),
+                })
+                .collect(),
+        }
+    }
+}
+
 /// Unified session info data returned by GetSessionInfo.
-/// One query, all the fields needed for /session-info and /context.
+/// One query, all the fields needed for /session-info, /context, and /stats.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SessionInfoData {
@@ -517,6 +580,9 @@ pub struct SessionInfoData {
     #[serde(default)]
     pub turn_index: u64,
     pub context: ContextInfo,
+    /// API usage ledger for this session (input/output/cache/$ by model).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub token_stats: Option<SessionTokenStats>,
 }
 
 /// Whether this model slug supports showing checkpoint identity (resolved model ID, fingerprint).

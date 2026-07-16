@@ -4202,9 +4202,52 @@ fn format_session_info(
     let version_display = xai_grok_version::display_version(
         xai_grok_update::channel_label(),
     );
-    format!(
+    let mut out = format!(
         "{title_line}  Shell version: {version_display}\n  Session ID: {session_id}{conversation_line}\n  Working directory: {cwd}\n  Model: {model_display}{model_hash_line}{backend_line}{sandbox_line}{turn_line}\n  Context: {used} / {total} tokens ({pct}%)"
-    )
+    );
+    // Session API usage ledger (input / output / cache / $ by model)
+    if let Some(stats) = &info.data.token_stats {
+        out.push_str("\n\n  Token stats (session API usage)");
+        out.push_str(&format!(
+            "\n  Input: {} · Output: {} · Cache read: {} · Reasoning: {}",
+            stats.input_tokens,
+            stats.output_tokens,
+            stats.cached_read_tokens,
+            stats.reasoning_tokens
+        ));
+        out.push_str(&format!(
+            "\n  Model calls: {} (main loop: {})",
+            stats.model_calls, stats.main_loop_model_calls
+        ));
+        if let Some(usd) = stats.cost_usd {
+            let partial = if stats.cost_partial { " (partial)" } else { "" };
+            out.push_str(&format!("\n  Est. cost: ${usd:.6}{partial}"));
+        } else {
+            out.push_str("\n  Est. cost: n/a (provider did not report)");
+        }
+        if stats.incomplete {
+            out.push_str("\n  Note: ledger marked incomplete (some subagent usage may be missing)");
+        }
+        if !stats.by_model.is_empty() {
+            out.push_str("\n  By model:");
+            for m in &stats.by_model {
+                let cost = m
+                    .cost_usd
+                    .map(|c| format!(" · ${c:.6}"))
+                    .unwrap_or_default();
+                out.push_str(&format!(
+                    "\n    - {}: in={} out={} cache={} calls={}{cost}",
+                    m.model,
+                    m.input_tokens,
+                    m.output_tokens,
+                    m.cached_read_tokens,
+                    m.model_calls
+                ));
+            }
+        }
+        out.push_str("\n  Tip: /context for window composition · /usage for product credits");
+    }
+    out
 }
 /// Build the single text content block for a plain `Effect::SendPrompt`.
 ///

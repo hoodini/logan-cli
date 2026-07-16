@@ -22,7 +22,8 @@ token visibility, auto-routing, goals, observability, and remote-agent use.
 | **LiteLLM** | **Yes as OpenAI-compat** | Point `base_url` at LiteLLM proxy |
 | **Langfuse-class tracing** | **Partial** | OTEL exporter exists; wire OTLP endpoint to Langfuse/OTEL backends |
 | **Memory / self-improve** | **Yes (Logan)** | Memory + dream + skills + auto-reflect hooks |
-| **Smart auto model routing** | **No first-class router** | Manual `-m` / `/model` only today → design below |
+| **Smart auto model routing** | **`--route auto` shipped** | Heuristic classifier → `tier-*` before sample; skill still available |
+| **`/stats`** | **Shipped** | Session ledger: input/output/cache/reasoning/cost by model |
 
 ---
 

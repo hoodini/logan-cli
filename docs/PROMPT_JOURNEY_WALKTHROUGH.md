@@ -1,294 +1,378 @@
-# Prompt journey walkthrough (real example)
+# Prompt journey: real texts, tokens, and final context length
 
-**Goal:** show *exactly* what happens when you send one prompt - how the
-system prompt is built, what fills the context window, and where tokens go.
+This is the **concrete** walkthrough. Not abstract boxes - actual strings,
+injection points, and approximate token counts so anyone can understand
+where context goes.
 
-Author: Yuval Avidani (YUV.AI) · https://yuv.ai  
-Product: Logan (inspired by Wolverine - claws out for hard bugs)
+Author: Yuval Avidani (YUV.AI) · Logan CLI  
+Inspect live: `/context` · `/stats` · session files under `~/.logan/sessions/`
 
 ---
 
-## The example task
+## Scenario
 
-You open Logan in `~/logan-cli` and type:
+You run:
 
-```text
-Add a /stats slash stub that prints "coming soon" and open a PR draft.
+```bash
+cd ~/logan-cli
+logan --route auto -p "Add a /stats command that prints token usage by model"
 ```
 
-Model: `tier-default` (e.g. Claude Sonnet) · memory **on** · skills available.
+`--route auto` classifies this as **implementation** → `tier-default`
+(e.g. Claude Sonnet). Memory is **on**. MCP Excalidraw is connected via
+Grok Build website connectors. Skills include `self-improve`, `auto-route`.
 
 ---
 
-## Big picture (visual)
+## Visual pipeline (with sizes)
 
 ```mermaid
 flowchart TD
-  U["YOU type prompt"] --> CLI["logan CLI"]
-  CLI --> S["Session actor"]
-  S --> B["Build request"]
-  B --> SP["Assemble system prompt"]
-  B --> H["Load short-term history"]
-  B --> T["Attach tool schemas"]
-  B --> M["Inject memory-context if any"]
-  SP --> R["One HTTP request to LLM"]
-  H --> R
-  T --> R
-  M --> R
-  R --> LOOP{"Model returns"}
-  LOOP -->|tool_calls| TOOLS["Run tools<br/>edit · shell · gh"]
-  TOOLS --> R
-  LOOP -->|final text| OUT["Stream to TUI + logs"]
-  OUT --> LEARN["Stop hook / optional /flush"]
+  P["User prompt<br/>~18 tokens"] --> S0["Session create<br/>UUIDv7 dir"]
+  S0 --> SP["Build system_prompt.txt<br/>~4.2k tokens"]
+  S0 --> TD["Attach tools[] schemas<br/>~18k tokens"]
+  S0 --> SK["Skills listing text<br/>~0.6k tokens"]
+  S0 --> MCP["MCP tool schemas<br/>~0.4k tokens"]
+  S0 --> AG["AGENTS.md reminder<br/>~0.3k tokens"]
+  S0 --> MEM["memory-context block<br/>~0.2k tokens"]
+  SP --> REQ["HTTP request to LLM"]
+  TD --> REQ
+  SK --> REQ
+  MCP --> REQ
+  AG --> REQ
+  MEM --> REQ
+  P --> REQ
+  REQ --> U1["usage: in=24.5k out=0.2k<br/>cache_read=12k"]
+  U1 --> LOOP["Tool loop…"]
+  LOOP --> FINAL["Final context used<br/>~48k / 200k = 24%"]
 ```
 
 ---
 
-## Step by step with *what is inside*
+## Step 0 - Route (before any sample)
 
-### Step 1 - You type
-
-| Field | Value |
+| Input | Output |
 | --- | --- |
-| cwd | `/Users/you/logan-cli` |
-| session | new UUIDv7 under `~/.logan/sessions/<encoded-cwd>/<id>/` |
-| prompt chars | ~90 |
+| Prompt text | `Add a /stats command that prints token usage by model` |
+| Classifier | `route_auto::classify_route` |
+| Decision | `tier-default` - "standard implementation / default tier" |
+| CLI log | `logan: --route → model tier-default (...)` |
 
-Nothing is sent to the model yet - only local session state is prepared.
-
----
-
-### Step 2 - CLI + session
-
-Logan resolves:
-
-- model id + API backend (`messages` / `chat_completions` / `responses`)
-- permission mode, sandbox
-- slash rewrite (none - this is a plain user message)
-- optional skill rewrite (none unless you invoked `/skill …`)
+If you had typed `What does stats mean?`, route would pick `tier-fast`.
 
 ---
 
-### Step 3 - System prompt is **assembled** (not one fixed string forever)
+## Step 1 - Session artifacts created
 
-```mermaid
-flowchart LR
-  subgraph layers [System prompt layers]
-    A1["1 Identity + safety<br/>~1.5–3k tok"]
-    A2["2 Tool-calling rules<br/>~0.3–0.8k"]
-    A3["3 Skills catalog<br/>~0.2–2k"]
-    A4["4 Memory instructions<br/>~0.2–0.5k"]
-    A5["5 User guide hint<br/>~0.1k"]
-  end
-  A1 --> A2 --> A3 --> A4 --> A5
+```text
+~/.logan/sessions/<encoded-cwd>/<session-id>/
+  system_prompt.txt      ← full rendered system string
+  prompt_context.json    ← structured assembler inputs
+  chat_history.jsonl     ← conversation items
+  updates.jsonl          ← resume log
 ```
 
-#### Layer 1 - identity (excerpt of what the model sees)
+You can open `system_prompt.txt` after any session - that is the truth of
+what the model was told about identity and rules.
+
+---
+
+## Step 2 - System prompt text (what gets injected)
+
+The model receives something like this (**abbreviated but real structure**):
 
 ```text
 You are Logan, a coding agent CLI by Yuval Avidani (YUV.AI), forked from
-xAI Grok Build. You are an interactive CLI tool that helps users with
-software engineering tasks. Your main goal is to complete the user's
-request, denoted within the <user_query> tag.
+xAI Grok Build. You are an autonomous agent that completes software
+engineering tasks. Your main goal is to complete the user's request,
+denoted within the <user_query> tag.
 
 When long-term memory is available, use it to honor the user's preferences
-and past lessons...
+and past lessons (what worked / what failed). Prefer durable improvements
+via memory over repeating the same mistakes.
 
 <action_safety>
-Weigh each action by how easily it can be undone...
+Weigh each action by how easily it can be undone and how far its effects
+reach. Local, reversible work such as editing files and running tests is
+fine to do freely. Before executing any actions that are hard to reverse,
+reach shared external systems, or are otherwise risky or destructive,
+check with the user first.
+...
 </action_safety>
-```
 
-#### Layer 2 - tool rules (excerpt)
-
-```text
 <tool_calling>
-- Use specialized tools instead of bash when possible
-  (e.g. read_file, search_replace) ...
+- Use specialized tools instead of bash when possible (e.g., `read_file`
+  for reading files, `search_replace` for editing). Reserve bash for
+  real shell operations.
 </tool_calling>
+
+<background_tasks>
+For watch processes… Use the `monitor` tool…
+</background_tasks>
+
+<output_efficiency>
+- Write like an excellent technical blog post…
+</output_efficiency>
+
+<formatting>
+Your text output is rendered as GitHub-flavored markdown…
+</formatting>
+
+## Skills
+- auto-route: Recommend a token-saving model tier…
+- self-improve: Hermes-style reflection…
+- learn-user: Extract and store preferences…
+- check-work: Verify changes…
+(…more skills with one-line descriptions only…)
+
+## Memory
+You have memory_search and memory_get tools. Use them when past decisions
+or preferences might help.
 ```
 
-#### Layer 3 - skills catalog (names + short descriptions only)
+### Token estimate for this layer
+
+| Piece | ~Chars | ~Tokens (chars/4) |
+| --- | --- | --- |
+| Identity + memory note | 450 | 110 |
+| action_safety | 1,800 | 450 |
+| tool_calling + background | 900 | 225 |
+| output_efficiency + formatting | 700 | 175 |
+| Skills catalog (20 skills) | 2,400 | 600 |
+| Memory tool instructions | 400 | 100 |
+| **System text total** | **~6.7k** | **~1.7–2.5k** |
+
+Real sessions are often **3–6k system tokens** depending on skill count and
+template features. See live: `/context` → "System prompt".
+
+---
+
+## Step 3 - Not in system string: tool schemas (the big fixed cost)
+
+The API also gets a separate `tools` array (JSON schemas for every tool).
+Example (one tool only):
+
+```json
+{
+  "type": "function",
+  "function": {
+    "name": "search_replace",
+    "description": "Performs exact string replacements in files…",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "file_path": { "type": "string" },
+        "old_string": { "type": "string" },
+        "new_string": { "type": "string" },
+        "replace_all": { "type": "boolean" }
+      },
+      "required": ["file_path", "old_string", "new_string"]
+    }
+  }
+}
+```
+
+With **30–60 tools** (edit, shell, MCP, skills, …) this often dominates:
+
+| Piece | ~Tokens |
+| --- | --- |
+| Built-in tool schemas | 12,000–25,000 |
+| MCP tools (e.g. Excalidraw) | 200–2,000 |
+| **Tools total** | **~14k–27k** |
+
+`/context` shows this as **Tool definitions · N tools**.
+
+---
+
+## Step 4 - Project instructions (AGENTS.md)
+
+Injected as a **user** (or synthetic reminder) message, not always system:
 
 ```text
-## Skills
-- self-improve: Hermes-style reflection...
-- learn-user: extract preferences...
-- auto-route: recommend model tier...
-- check-work: verification...
-(…more discovered skills…)
+<project_instructions>
+# Global preferences - Yuval Avidani
+## Writing style: single hyphen, never em/en-dash
+...
+</project_instructions>
 ```
 
-Full skill bodies are **not** dumped into the system prompt - they load when
-the skill tool runs.
+| Piece | ~Tokens |
+| --- | --- |
+| AGENTS.md / Claude.md stack | 200–2,000 (yours may be larger) |
 
-#### Layer 4 - memory (when enabled)
+---
 
-Instructions to use `memory_search` / `memory_get`, plus optional first-turn:
+## Step 5 - Memory inject (first turn)
+
+When memory is enabled and search hits:
 
 ```text
 <memory-context>
 ## Preferences
-- Writing: plain hyphen only
-- Confirm before force-push
+- Writing: plain hyphen `-` only
+- Confirm before force-push / shared systems
 
 ## Lessons
-- Prefer cargo check -p <crate> over full workspace
+- Prefer `cargo check -p <crate>` over full workspace builds
 </memory-context>
 ```
 
-#### Not always in the system string
-
-| Content | How it is attached |
+| Piece | ~Tokens |
 | --- | --- |
-| **AGENTS.md / rules** | Often synthetic **user** reminders, not only system |
-| **Tool JSON schemas** | Separate `tools` array on the API request (big!) |
-| **Prior turns** | Conversation array (short-term memory) |
+| memory-context block | 50–800 |
 
 ---
 
-### Step 4 - Context window anatomy (example numbers)
+## Step 6 - Your prompt lands
 
-Numbers are **illustrative** (bytes÷4 style estimates). Real values vary by
-model tokenizer and enabled tools. Check live with **`/context`**.
-
-```mermaid
-pie title Context window budget example (200k model)
-  "System prompt text" : 4000
-  "Tool schemas" : 18000
-  "Skills listing" : 800
-  "AGENTS.md / rules" : 1500
-  "Memory-context block" : 400
-  "User message" : 50
-  "Free (room for tools + reply)" : 175250
+```text
+<user_query>
+Add a /stats command that prints token usage by model
+</user_query>
 ```
 
-| Bucket | ~Tokens | Notes |
-| --- | --- | --- |
-| System prompt text | 3–6k | Identity, safety, catalogs |
-| **Tool schemas** | **10–40k** | Often the largest fixed cost |
-| Skills listing | 0.2–2k | Names + descriptions only |
-| Project rules | 0–5k | Your AGENTS.md size |
-| Memory inject | 0–2k | First turn / post-compact |
-| History | 0 → grows | Previous turns + tool results |
-| **Free** | rest | Output + future tools |
+| Piece | ~Tokens |
+| --- | --- |
+| User query | ~15–25 |
 
-After several tool rounds, history balloons - Logan **prunes** old tool
-results near ~50% and **auto-compacts** near ~85%.
+---
+
+## Step 7 - First request: total context length
+
+**Before any tool results** (illustrative, 200k model):
+
+| Bucket | ~Tokens | % of 200k |
+| --- | --- | --- |
+| System prompt text | 4,200 | 2.1% |
+| Tool schemas | 18,000 | 9.0% |
+| Skills listing (in system or category) | 600 | 0.3% |
+| MCP tool schemas | 400 | 0.2% |
+| AGENTS.md | 300 | 0.15% |
+| Memory-context | 200 | 0.1% |
+| User prompt | 20 | ~0% |
+| **Used** | **~23,720** | **~12%** |
+| **Free** | **~176,280** | **~88%** |
+
+```mermaid
+pie title First request context (~200k window)
+  "System text" : 4200
+  "Tool schemas" : 18000
+  "Skills + MCP + rules + memory + user" : 1520
+  "Free" : 176280
+```
+
+Provider may also report **cache_read** if the system/tools prefix was cached
+from a prior call (huge savings on tool-loop turns 2+).
+
+Example usage object after first completion:
+
+```json
+{
+  "prompt_tokens": 24500,
+  "completion_tokens": 180,
+  "cached_prompt_tokens": 12000,
+  "reasoning_tokens": 0
+}
+```
+
+Meaning: ~12k of the 24.5k input was billed as cache read (cheaper), not full
+fresh input.
+
+---
+
+## Step 8 - Tool loop grows the window
+
+Each tool result is appended to **messages** and re-sent (or cache-hit):
+
+```text
+assistant: tool_call read_file(slash/commands/mod.rs)
+user: tool_result  … 400 lines …
+assistant: tool_call search_replace(...)
+user: tool_result ok
+assistant: tool_call run_terminal_command(cargo check -p xai-grok-pager)
+user: tool_result … compile output …
+```
+
+| After N tool rounds | ~Used | Notes |
+| --- | --- | --- |
+| 0 | 24k | first call |
+| 3 | 35–45k | file reads |
+| 8 | 70–90k | large tool outputs |
+| >50% | prune old tool results | soft trim |
+| >85% | auto-compact | summarize history |
 
 ```mermaid
 xychart-beta
-  title "Example session fill over turns (illustrative %)"
-  x-axis [Start, After_tools_3, After_tools_8, After_compact]
-  y-axis "Context used %" 0 --> 100
-  bar [12, 48, 82, 35]
+  title "Context used % over the task (illustrative)"
+  x-axis [Start, Tools_3, Tools_8, Compact]
+  y-axis "Percent" 0 --> 100
+  bar [12, 28, 55, 30]
 ```
 
 ---
 
-### Step 5 - First model call (request shape)
+## Step 9 - After the task: `/stats` and `/context`
 
-Conceptual JSON (simplified):
+```text
+/context
+  → window composition (system / messages / tools / free)
 
-```json
-{
-  "model": "claude-sonnet-4-5",
-  "system": "<assembled Logan system prompt…>",
-  "messages": [
-    { "role": "user", "content": "<project-instructions>…AGENTS.md…</project-instructions>" },
-    { "role": "user", "content": "<user_query>\nAdd a /stats slash stub…\n</user_query>" }
-  ],
-  "tools": [ { "name": "read_file", "…" : "…" }, { "name": "search_replace" }, "…" ]
-}
+/stats
+  → session API usage:
+    Input: 91200 · Output: 6400 · Cache read: 48000 · Reasoning: 0
+    By model:
+      - tier-default: in=91200 out=6400 cache=48000 calls=9
+    Est. cost: $… (if provider reports)
 ```
 
-Provider returns usage (when available):
-
-```json
-{
-  "input_tokens": 24500,
-  "output_tokens": 180,
-  "cache_read_input_tokens": 12000,
-  "cache_creation_input_tokens": 800
-}
-```
-
-**Cache** tokens: repeated system/tool prefix often hits provider prompt cache -
-that is why stable system prompts matter for cost.
+Ledger is filled every sample via `record_model_call_usage` (already in
+harness). Headless JSON also surfaces `usage` when the provider returns it.
 
 ---
 
-### Step 6 - Tool loop (still one "journey")
-
-```mermaid
-sequenceDiagram
-  participant M as Model
-  participant L as Logan tools
-  participant FS as Repo
-  M->>L: read_file slash commands
-  L->>FS: read
-  FS-->>L: contents
-  L-->>M: tool_result
-  M->>L: search_replace add /stats stub
-  L->>FS: edit
-  FS-->>L: ok
-  L-->>M: tool_result
-  M->>L: run_terminal_command cargo check
-  L-->>M: compile ok
-  M->>L: run_terminal_command gh pr create
-  L-->>M: PR URL
-  M-->>L: final assistant text
-```
-
-Each tool round **re-sends** (or cache-hits) system + tools + growing history.
-That is why long tool transcripts get expensive - and why pruning/compaction
-exist.
-
----
-
-### Step 7 - What you see vs what is stored
-
-| Surface | Content |
-| --- | --- |
-| TUI stream | Model text + tool cards |
-| `updates.jsonl` | Resume/event log |
-| `chat_history.jsonl` | Model-facing history |
-| `/context` | Live composition estimate |
-| Stop hook | Reflection stub → MEMORY.md |
-| Optional `/flush` | Rich long-term summary |
-
----
-
-## How to inspect this yourself
+## How to reproduce and see the real files
 
 ```bash
-# Live composition
+# 1) Run a headless task with routing
+logan --route auto -p "Explain route_auto.rs in 5 bullets" \
+  --output-format json -m tier-fast   # or omit -m to use route
+
+# 2) Find latest session
+ls -lt ~/.logan/sessions/*/* | head
+
+# 3) Read the exact system prompt
+# cat ~/.logan/sessions/<cwd-enc>/<id>/system_prompt.txt | head -80
+# cat ~/.logan/sessions/<cwd-enc>/<id>/prompt_context.json | head
+
+# 4) In TUI after a real session
 /context
+/stats
 /session-info
-
-# Headless with usage JSON
-logan -p "Explain main.rs in 3 bullets" --output-format json -m tier-fast
-
-# After agent-style calls
-python3 examples/scripts/usage-rollup.py --by-model
 ```
 
-Architects: `PromptContext` in `xai-grok-agent` is the structured assembler;
-`Agent::system_prompt()` holds the rendered string.
+Helper:
+
+```bash
+examples/scripts/dump-prompt-journey.sh
+```
 
 ---
 
-## Mental model (one sentence)
+## One-sentence mental model
 
-**System prompt = who Logan is + how to use tools; tools array = what Logan can
-do; messages = the job + history; memory = durable lessons; compaction = keep
-the window livable.**
+**System prompt = identity + rules + skill names; tools[] = full schemas (biggest
+fixed cost); messages = AGENTS + memory + your prompt + tool transcript;
+`/context` = window pie; `/stats` = API spend by model; route auto = which
+brain pays for it.**
 
 ---
 
-## Related
+## Related code
 
-- [architecture/ARCHITECTURE.md](architecture/ARCHITECTURE.md)
-- [MODEL_ROUTING.md](MODEL_ROUTING.md) - per skill / subagent models
-- [AUTOMATIONS.md](AUTOMATIONS.md) - schedules, cron, wake
-- [FEATURES.md](FEATURES.md)
+| Artifact | Path |
+| --- | --- |
+| System template | `crates/codegen/xai-grok-agent/templates/prompt.md` |
+| Assembler | `PromptContext` / `AgentBuilder` |
+| Route classifier | `xai_grok_shell::route_auto` |
+| Usage ledger | `xai_chat_state::UsageLedger` |
+| Session dump | `system_prompt.txt`, `prompt_context.json` |

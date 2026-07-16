@@ -494,6 +494,12 @@ pub struct PagerArgs {
     /// Model ID to use.
     #[clap(short = 'm', long = "model", value_name = "MODEL")]
     pub model: Option<String>,
+    /// Smart model routing before sample: `auto` classifies the prompt into
+    /// tier-fast / tier-default / tier-premium / tier-local (see
+    /// examples/config/auto-routing.toml), or pass a concrete model/tier id.
+    /// When both `--route` and `-m` are set, `-m` wins.
+    #[clap(long = "route", value_name = "auto|TIER_OR_MODEL")]
+    pub route: Option<String>,
     /// Reasoning effort for reasoning models
     #[clap(
         long = "reasoning-effort",

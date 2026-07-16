@@ -590,10 +590,28 @@ pub(crate) async fn run(
         resume = ?args.resume_session,
         "RESTORE_CODE_DEBUG: CLI args mapped"
     );
-    app.cli_model_override = args
-        .model
-        .as_deref()
-        .map(agent_client_protocol::ModelId::new);
+    // Resolve -m / --route before session start. -m wins; --route auto
+    // classifies the initial prompt (positional or -p already handled as headless).
+    let initial_prompt = args.prompt.as_deref();
+    let routed = {
+        use xai_grok_shell::route_auto::{RouteMode, resolve_route};
+        if let Some(m) = args.model.as_deref().map(str::trim).filter(|s| !s.is_empty()) {
+            Some(m.to_string())
+        } else if let Some(route) = args.route.as_deref() {
+            let d = resolve_route(&RouteMode::parse(route), initial_prompt);
+            if matches!(RouteMode::parse(route), RouteMode::Auto) {
+                tracing::info!(
+                    model = %d.model_id,
+                    reason = %d.reason,
+                    "cli --route auto selected model"
+                );
+            }
+            Some(d.model_id)
+        } else {
+            None
+        }
+    };
+    app.cli_model_override = routed.map(agent_client_protocol::ModelId::new);
     app.cli_effort_token = args.reasoning_effort.clone();
     app.auth_use_oauth = args.oauth;
     app.show_resolved_model = remote_settings

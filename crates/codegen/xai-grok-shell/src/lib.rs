@@ -31,6 +31,7 @@ pub use xai_grok_models as models;
 pub mod plugin;
 pub mod relay;
 pub mod remote;
+pub mod route_auto;
 pub mod sampling;
 pub mod session;
 pub mod terminal;

@@ -122,6 +122,7 @@ async fn handle_session_info(
                 crate::util::config::DEFAULT_AUTO_COMPACT_THRESHOLD_PERCENT,
             ..ContextInfo::default()
         },
+        token_stats: None,
     });
 
     // Calculate the model's display name.

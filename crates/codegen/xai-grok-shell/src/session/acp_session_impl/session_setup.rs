@@ -578,6 +578,12 @@ impl SessionActor {
             .map(|id| self.models_manager.model_show_model_fingerprint(id))
             .unwrap_or(false);
         let conversation_id = None;
+        let token_stats = self
+            .chat_state_handle
+            .try_get_session_usage()
+            .await
+            .ok()
+            .map(|ledger| crate::session::acp_types::SessionTokenStats::from_ledger(&ledger));
         SessionInfoData {
             model,
             model_display_name: None,
@@ -605,6 +611,7 @@ impl SessionActor {
                 auto_compact_threshold_percent: self.compaction.threshold_percent.get(),
                 usage_categories,
             },
+            token_stats,
         }
     }
     /// Build the `/context` usage rows for the skills listing and the MCP

@@ -107,10 +107,11 @@ Extra visuals (optional): [journey SVG](docs/assets/infographic-prompt-journey.s
 | **Token / context breakdown** | **Already here** | `/context` · `/session-info` · headless JSON `usage` · OTEL `input/output/cache_read` |
 | **`/usage`** | **Already here** | Credits/billing path |
 | **Local stats rollup** | **Logan scripts** | `examples/scripts/logan-call.sh` → `~/.logan/stats/usage.jsonl` · `usage-rollup.py` |
-| **Smart auto-routing** | **Tiers + skill now** | `examples/config/auto-routing.toml` · `/skill auto-route` · native `--route auto` planned |
+| **Smart auto-routing** | **Native `--route auto`** | Classifies prompt → `tier-fast/default/premium/local` before sample |
+| **`/stats`** | **First-class** | Session input/output/cache/reasoning/$ by model |
 | **LiteLLM** | **Works today** | OpenAI-compat `base_url` → LiteLLM proxy |
-| **Langfuse** | **OTEL path** | `examples/config/observability.toml` → OTLP to Langfuse |
-| **Remote agent for other AIs** | **Works today** | Headless `-p` · `agent stdio` · HTTP wrapper |
+| **Langfuse** | **OTEL recipe** | `examples/config/langfuse.env.example` + observability.toml |
+| **Remote agent for other AIs** | **Hardened HTTP** | Auth + quotas · `examples/scripts/logan-agent-server.py` |
 
 | **Per-skill / subagent models** | **Supported** | Skill + agent frontmatter `model:` · [MODEL_ROUTING.md](docs/MODEL_ROUTING.md) |
 | **Schedules / automations** | **Supported + OS recipes** | `/loop` · `scheduler_*` · cron/launchd/Task Scheduler · [AUTOMATIONS.md](docs/AUTOMATIONS.md) |
@@ -134,10 +135,14 @@ flowchart TD
 ```
 
 ```bash
-# configure tiers
+# configure tiers once
 cat examples/config/auto-routing.toml >> ~/.logan/config.toml
-logan -m tier-fast -p "What does this crate do?"
-logan -m tier-premium -p "Redesign auth for multi-tenant"
+
+# Native classifier before sample (-m always wins if set)
+logan --route auto -p "What does this crate do?"          # → tier-fast
+logan --route auto -p "Implement /stats token dashboard"  # → tier-default
+logan --route auto -p "Redesign auth architecture"        # → tier-premium
+logan --route tier-local -p "Offline review"
 # mid-session: /skill auto-route
 ```
 
@@ -145,9 +150,13 @@ logan -m tier-premium -p "Redesign auth for multi-tenant"
 
 ```bash
 # In TUI
-/context          # system / messages / tools / free
-/session-info     # session rollup
-/usage            # credits when applicable
+/context          # window composition (system / messages / tools / free)
+/stats            # API usage: input · output · cache · $ · by model
+/session-info     # session rollup (includes token stats)
+/usage            # product credits when applicable
+
+# Dump real system_prompt.txt from latest session
+examples/scripts/dump-prompt-journey.sh
 
 # As another agent (JSON + ledger)
 examples/scripts/logan-call.sh "Run tests and fix failures"

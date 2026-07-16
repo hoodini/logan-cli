@@ -45,6 +45,25 @@ use xai_grok_shell::leader::{
     ControlPayload, LeaderClient, LeaderEnvUrls, connect_or_spawn, socket_path_for_ws_url,
 };
 use xai_grok_update::{UpdateConfig, auto_update, enforce_minimum_version_or_exit};
+/// Resolve CLI model from explicit `-m` and optional `--route`.
+/// `-m` always wins. `--route auto` classifies the prompt into a tier id.
+fn resolve_cli_model(
+    model: Option<&str>,
+    route: Option<&str>,
+    prompt: Option<&str>,
+) -> Option<xai_grok_shell::route_auto::RouteDecision> {
+    if let Some(m) = model.map(str::trim).filter(|s| !s.is_empty()) {
+        return Some(xai_grok_shell::route_auto::RouteDecision {
+            model_id: m.to_string(),
+            reason: "explicit -m / --model".into(),
+            tier: "forced",
+        });
+    }
+    let route = route?;
+    let mode = xai_grok_shell::route_auto::RouteMode::parse(route);
+    Some(xai_grok_shell::route_auto::resolve_route(&mode, prompt))
+}
+
 /// Apply headless args to an existing config, only overriding values that are
 /// explicitly set. This allows environment defaults to be preserved when
 /// specific args are not provided.
@@ -901,6 +920,8 @@ async fn run_agent_command(
     let mut agent_config = AgentConfig::new_from_toml_cfg(&raw_config)
         .map_err(|e| anyhow::anyhow!("Failed to create agent config: {}", e))?;
     agent_config.default_model_override = agent_args.model.clone();
+    // Note: `--route` is applied on the pager CLI path (headless / interactive)
+    // before AgentArgs is built; agent subcommand still uses explicit -m.
     agent_config.reasoning_effort_override = agent_args
         .reasoning_effort
         .as_deref()
@@ -1807,6 +1828,28 @@ async fn async_main() -> Result<()> {
                 );
             }
         }
+        // --route auto: classify prompt into tier-* model before sample.
+        // Explicit -m always wins.
+        let route_text: Option<String> = match &prompt {
+            xai_grok_pager::headless::HeadlessPrompt::Text(t) => Some(t.clone()),
+            xai_grok_pager::headless::HeadlessPrompt::Blocks(_) => {
+                // Prefer CLI -m for structured prompts; auto falls back to default.
+                None
+            }
+        };
+        let routed = resolve_cli_model(
+            args.model.as_deref(),
+            args.route.as_deref(),
+            route_text.as_deref(),
+        );
+        if let Some(ref decision) = routed {
+            if args.route.is_some() && args.model.is_none() {
+                eprintln!(
+                    "logan: --route → model `{}` ({})",
+                    decision.model_id, decision.reason
+                );
+            }
+        }
         return xai_grok_pager::headless::run_single_turn(
             prompt,
             args.verbatim,
@@ -1818,7 +1861,7 @@ async fn async_main() -> Result<()> {
                 trust: args.trust,
                 output_format: args.output_format,
                 json_schema,
-                model: args.model,
+                model: routed.map(|d| d.model_id),
                 rules: args.rules,
                 system_prompt_override: args.system_prompt_override.clone(),
                 continue_last_session: args.continue_last_session,
