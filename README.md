@@ -9,6 +9,7 @@
        V   V   V     inspired by Wolverine · by Yuval Avidani (YUV.AI)
   ═══════════════════════════════════════
   multi-LLM · memory · self-improve · MCP
+  live tokens · /stats · /context deep
 </pre>
 
 <h1 align="center">Logan <code>logan</code></h1>
@@ -31,17 +32,25 @@
 </p>
 
 ```sh
-# Install (from this repo) - builds, installs PATH + managed binary, seeds config
+# One-command install - PATH + managed binary + config + skills sync
 bash scripts/install-logan.sh
 export PATH="$HOME/.local/bin:$PATH"
 logan login          # same xAI OIDC as Grok Build
-logan                # TUI · /stats · /context · /goal
+logan                # TUI
+
+# After any turn - see exactly what you are spending:
+#   /stats          colorful API in / out / cache / $ by model
+#   /context        window composition bar
+#   /context deep   actual system prompt + message texts
+#   /goal …         autonomous goal loop
 
 logan --version
 # Logan by Yuval Avidani (YUV.AI) - v…
 ```
 
-**Start here:** [docs/START_HERE.md](docs/START_HERE.md) · **LLM install prompt:** [docs/LLM_INSTALL_PROMPT.md](docs/LLM_INSTALL_PROMPT.md)
+**Start here:** [docs/START_HERE.md](docs/START_HERE.md) ·
+**Token visibility (deep dive):** [docs/TOKEN_VISIBILITY.md](docs/TOKEN_VISIBILITY.md) ·
+**LLM install prompt:** [docs/LLM_INSTALL_PROMPT.md](docs/LLM_INSTALL_PROMPT.md)
 
 | | |
 | --- | --- |
@@ -105,28 +114,88 @@ Extra visuals (optional): [journey SVG](docs/assets/infographic-prompt-journey.s
 
 ---
 
-## Tokens, stats, auto-routing, goals, remote agent
+## Token visibility first - never fly blind
 
-**Devs need visibility and control.** Here is what exists vs what Logan is productizing:
+**Logan’s product promise:** you always know **what you are consuming**, **why the window is full**, and **which text** those tokens are.
+
+Full guide: **[docs/TOKEN_VISIBILITY.md](docs/TOKEN_VISIBILITY.md)**
+
+### Three layers (use in this order)
+
+| Layer | Command / surface | Answers |
+| --- | --- | --- |
+| **1 · Live** | Status bar (always on) | Window fill `%` · last sample **`in / out / c`** · model · search · mcp |
+| **2 · API bill** | **`/stats`** (colorful) | Session **input · output · cache · reasoning · $ · by model** |
+| **3 · Real text** | **`/context deep`** | **Actual** system prompt + user/assistant/tool message previews |
+
+```text
+# Status bar (no slash needed) - after every sample:
+m grok-4.5 · s grok-search · mcp 3    24K / 200K 12% · in 2.4K out 180 c 1.2K
+                                      │              └─ last API sample
+                                      └─ context window fill (+ ! near compact)
+
+# When you want numbers that stand out:
+/stats
+  IN  12.4K   OUT  1.8K   CACHE  40.2K   REASON  900
+  est. cost  $0.012340
+  By model:
+    grok-4.5    in …  out …  cache …  calls …
+
+# When you want to read what is in the window:
+/context              # composition bar (sys · msg · tools · free)
+/context deep         # system_prompt.txt + chat_history.jsonl text, color by role
+```
+
+**Color coding (stats + deep dive):**
+
+| Color | Meaning |
+| --- | --- |
+| Teal | **IN** / system prompt |
+| Green | **OUT** / assistant |
+| Violet | **CACHE** / tools · reasoning overhead |
+| Amber | **REASON** / warnings · compact pressure |
+| Brand accent | **$** / user messages |
+
+**Compaction is honest too:**
+
+```text
+Compacting context (87% full)…
+Compacted 90K → 24K (saved 66K) in 1.2s
+```
+
+**Outside the TUI:**
+
+```bash
+examples/scripts/dump-prompt-journey.sh     # dump latest system_prompt + sizes
+examples/scripts/logan-call.sh "…"          # headless → ~/.logan/stats/usage.jsonl
+examples/scripts/usage-rollup.py            # day/model rollup
+logan -p "…" --output-format json           # usage in JSON when provider returns it
+```
+
+### Feature map (what shipped)
 
 | Need | Status | How |
 | --- | --- | --- |
-| **`/goal`** (Claude Code-class) | **Already here** | `/goal …` · `/goal status` · pause/resume/clear · enable with `GROK_GOAL=1` if hidden |
-| **Token / context breakdown** | **Already here** | `/context` · `/session-info` · headless JSON `usage` · OTEL `input/output/cache_read` |
-| **`/usage`** | **Already here** | Credits/billing path |
-| **Local stats rollup** | **Logan scripts** | `examples/scripts/logan-call.sh` → `~/.logan/stats/usage.jsonl` · `usage-rollup.py` |
-| **Smart auto-routing** | **Native `--route auto`** | Classifies prompt → `tier-fast/default/premium/local` before sample |
-| **`/stats`** | **First-class** | Session input/output/cache/reasoning/$ by model |
-| **Live last-turn chips** | **Shipped** | Status bar: `24K/200K 12% · in 2.4K out 180 c 1.2K` after every sample |
-| **LiteLLM** | **Works today** | OpenAI-compat `base_url` → LiteLLM proxy |
-| **Langfuse** | **OTEL recipe** | `examples/config/langfuse.env.example` + observability.toml |
-| **Remote agent for other AIs** | **Hardened HTTP** | Auth + quotas · `examples/scripts/logan-agent-server.py` |
+| **Live last-turn chips** | **Shipped** | Status bar `in / out / c` every sample (+ mid-tool window fill) |
+| **Colorful `/stats`** | **Shipped** | Bold IN/OUT/CACHE/REASON/$ · by-model ledger |
+| **`/context deep`** | **Shipped** | Real system prompt + message texts from session files |
+| **Dual-stack chips** | **Shipped** | `m <model> · s <search> · mcp N` |
+| **Compact before/after** | **Shipped** | Banner with saved tokens |
+| **`/goal`** | **Shipped** | `/goal …` · status · pause/resume/clear (`GROK_GOAL=1` if hidden) |
+| **Auto skills + MCP** | **Shipped** | `~/.logan` · `~/.grok` · claude/cursor/agents · `.mcp.json` |
+| **One-command install** | **Shipped** | `bash scripts/install-logan.sh` |
+| **Smart auto-routing** | **Shipped** | `--route auto` → `tier-fast/default/premium/local` |
+| **`/usage` credits** | **Shipped** | Product billing path when applicable |
+| **Local stats rollup** | **Scripts** | `logan-call.sh` + `usage-rollup.py` |
+| **LiteLLM** | **Works** | OpenAI-compat `base_url` |
+| **Langfuse** | **OTEL recipe** | `examples/config/langfuse.env.example` |
+| **Remote agent** | **Hardened HTTP** | `examples/scripts/logan-agent-server.py` |
+| **Per-skill models** | **Supported** | Skill/agent frontmatter `model:` · [MODEL_ROUTING.md](docs/MODEL_ROUTING.md) |
+| **Schedules** | **Supported** | `/loop` · `scheduler_*` · [AUTOMATIONS.md](docs/AUTOMATIONS.md) |
 
-| **Per-skill / subagent models** | **Supported** | Skill + agent frontmatter `model:` · [MODEL_ROUTING.md](docs/MODEL_ROUTING.md) |
-| **Schedules / automations** | **Supported + OS recipes** | `/loop` · `scheduler_*` · cron/launchd/Task Scheduler · [AUTOMATIONS.md](docs/AUTOMATIONS.md) |
-
-Full map: **[docs/FEATURES.md](docs/FEATURES.md)** · Remote: **[docs/REMOTE_AGENT.md](docs/REMOTE_AGENT.md)**  
-**Visual real example (system prompt + context window):** **[docs/PROMPT_JOURNEY_WALKTHROUGH.md](docs/PROMPT_JOURNEY_WALKTHROUGH.md)**
+Full map: **[docs/FEATURES.md](docs/FEATURES.md)** · Tokens: **[docs/TOKEN_VISIBILITY.md](docs/TOKEN_VISIBILITY.md)** ·
+Remote: **[docs/REMOTE_AGENT.md](docs/REMOTE_AGENT.md)** ·
+Walkthrough: **[docs/PROMPT_JOURNEY_WALKTHROUGH.md](docs/PROMPT_JOURNEY_WALKTHROUGH.md)**
 
 ### Auto-routing (save tokens)
 
@@ -137,48 +206,19 @@ flowchart TD
   C -->|normal implement| D[tier-default<br/>sonnet · gpt]
   C -->|arch / nasty bug| P[tier-premium<br/>opus · strong model]
   C -->|offline / private| L[tier-local]
-  F --> R[Run · log usage]
+  F --> R[Run · log usage · update bar]
   D --> R
   P --> R
   L --> R
 ```
 
 ```bash
-# configure tiers once
 cat examples/config/auto-routing.toml >> ~/.logan/config.toml
 
-# Native classifier before sample (-m always wins if set)
 logan --route auto -p "What does this crate do?"          # → tier-fast
 logan --route auto -p "Implement /stats token dashboard"  # → tier-default
 logan --route auto -p "Redesign auth architecture"        # → tier-premium
 logan --route tier-local -p "Offline review"
-# mid-session: /skill auto-route
-```
-
-### Token visibility (live UX)
-
-Status bar (always on):
-
-```text
-24K / 200K 12%     ← window fill + % (turns yellow/red near compact)
-⚠                  ← appears when fill ≥ auto-compact threshold
-```
-
-Hover context chip:
-
-```text
-sys 4.2K · msg 18K · tools 14K · free 163K · last in 2.4K out 180 cache 1.2K · compact@85%
-```
-
-```bash
-# In TUI
-/context          # full window composition card
-/stats            # API usage: input · output · cache · $ · by model
-/session-info     # session rollup (includes token stats)
-/usage            # product credits when applicable
-
-# After quit: auto-reflect hook can notify "Logan learned" (OSC + macOS)
-examples/scripts/dump-prompt-journey.sh
 ```
 
 ### Web search + dual stack (Grok + your LLM)
@@ -262,9 +302,12 @@ cat examples/config/observability.toml >> ~/.logan/config.toml
 | Binary | `grok` | **`logan`** |
 | Config | `~/.grok` | **`~/.logan`** |
 | Identity | xAI / Grok | **YUV.AI · Wolverine-inspired** |
+| Token visibility | Basic context | **Live bar + colorful `/stats` + `/context deep` text** |
 | Multi-LLM presets | Manual only | **8+ providers ready** |
 | Learning loop | No product loop | **skills + auto-reflect hooks** |
-| Prompt-journey docs | Fragmented | **README + infographics + Excalidraw** |
+| Skills / MCP | Config only | **Auto-load logan + grok + claude/cursor** |
+| Install | Manual build | **`scripts/install-logan.sh`** |
+| Prompt-journey docs | Fragmented | **README + TOKEN_VISIBILITY + walkthrough** |
 | Harness (tools/MCP/sessions) | Yes | **Yes (inherited)** |
 
 Full matrix: **[docs/COMPARISON.md](docs/COMPARISON.md)**

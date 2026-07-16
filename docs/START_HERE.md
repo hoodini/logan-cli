@@ -2,7 +2,12 @@
 
 **Yuval Avidani (YUV.AI)** · https://github.com/hoodini/logan-cli
 
-## You already built from this repo
+**Core idea:** Logan shows **what you spend** - live on the bar, as a colorful
+ledger, and as the **real text** inside the context window.
+
+Full token guide: **[TOKEN_VISIBILITY.md](TOKEN_VISIBILITY.md)**
+
+## Install + open
 
 ```bash
 bash scripts/install-logan.sh
@@ -11,22 +16,24 @@ logan login          # same xAI OIDC as Grok Build / this chat
 logan                # open TUI
 ```
 
-Inside the TUI after any turn:
+## After any turn - visibility recipe
 
-| Command | What |
+| Command | What you learn |
 | --- | --- |
-| `/stats` | colorful API in / out / cache / $ by model |
-| `/context` | window bar + categories |
-| `/context deep` | **actual** system prompt + message texts for those tokens |
-| `/goal …` | autonomous goal loop |
-| `/mcp` | MCP servers |
-| `/skills` | discovered skills |
+| *(status bar)* | Window fill % · last sample **in / out / cache** · model · search · mcp |
+| **`/stats`** | Colorful API bill: IN · OUT · CACHE · REASON · $ · by model |
+| **`/context`** | Composition bar - system vs messages vs tools vs free |
+| **`/context deep`** | **Actual** system prompt + user/assistant/tool texts for those tokens |
+| `/goal …` | Autonomous goal loop |
+| `/mcp` · `/skills` | Connected servers and discovered skills |
 
-Status bar shows:
+Status bar:
 
 ```text
-m <model> · s <search> · mcp N    |    24K/200K 12% · in … out … c …
+m <model> · s <search> · mcp N    24K/200K 12% · in 2.4K out 180 c 1.2K
 ```
+
+Never guess where tokens went - `/stats` for the bill, `/context deep` for the text.
 
 ## Auth = Grok / xAI
 

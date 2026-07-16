@@ -23,12 +23,14 @@ token visibility, auto-routing, goals, observability, and remote-agent use.
 | **Langfuse-class tracing** | **Partial** | OTEL exporter exists; wire OTLP endpoint to Langfuse/OTEL backends |
 | **Memory / self-improve** | **Yes (Logan)** | Memory + dream + skills + auto-reflect hooks |
 | **Smart auto model routing** | **`--route auto` shipped** | Heuristic classifier → `tier-*` before sample; skill still available |
-| **`/stats`** | **Shipped** | Session ledger: input/output/cache/reasoning/cost by model |
-| **Live status bar last-turn** | **Shipped** | Every sample updates context bar: `in / out / c` from `PromptResponse._meta` (no `/stats` required); mid-tool-loop window fill too |
+| **`/stats`** | **Shipped** | **Colorful** session ledger: IN/OUT/CACHE/REASON/$ by model (bold, high contrast) |
+| **`/context deep`** | **Shipped** | **Actual** system prompt + chat history text for those tokens (not only counts) |
+| **Live status bar last-turn** | **Shipped** | Every sample: `in / out / c` from `PromptResponse._meta`; mid-tool window fill too |
 | **Dual-stack status chips** | **Shipped** | `m <model> · s <search> · mcp N` on status bar |
 | **Compaction before/after** | **Shipped** | Scrollback banner: `Compacted 90K → 24K (saved 66K) in 1.2s` |
 | **Auto skills + MCP** | **Shipped** | Skills: `~/.logan`, `~/.grok`, claude/cursor/agents. MCP: config.toml, `.mcp.json`, cursor/claude |
 | **One-command install** | **Shipped** | `bash scripts/install-logan.sh` + [LLM_INSTALL_PROMPT.md](LLM_INSTALL_PROMPT.md) |
+| **Token visibility guide** | **Shipped** | [TOKEN_VISIBILITY.md](TOKEN_VISIBILITY.md) - full story for devs |
 
 ---
 
@@ -61,35 +63,45 @@ Safety: sandbox, `--allow`/`--deny`, `--tools`, network isolation, auth on the H
 
 ---
 
-## Token visibility & stats (roadmap productized)
+## Token visibility & stats (shipped - primary product surface)
 
-### What you can see now
+**Canonical guide:** [TOKEN_VISIBILITY.md](TOKEN_VISIBILITY.md)
+
+Logan answers three questions without leaving the TUI:
+
+| Question | Command / surface |
+| --- | --- |
+| How full is the window **right now**? | Status bar `24K/200K 12%` + last `in/out/c` |
+| What did the **API bill** this session? | **`/stats`** - colorful IN / OUT / CACHE / REASON / $ by model |
+| **What text** is eating the window? | **`/context deep`** - real `system_prompt.txt` + `chat_history.jsonl` |
+
+### Surfaces
 
 | Surface | Shows |
 | --- | --- |
-| `/context` | Context composition estimate |
-| `/session-info` | Session-level usage |
-| Headless JSON | `usage` object when provider sends it |
+| Status bar | Fill % · last sample in/out/cache · `m`/`s`/`mcp` chips · `!` near compact |
+| **`/stats`** | Session API ledger (bold colors) · by-model · last sample · est. $ |
+| **`/context`** | Composition bar (system · messages · tools · free) + auto-compact line |
+| **`/context deep`** | Same + color-coded previews of actual system prompt and messages |
+| Compact banner | `Compacted before → after (saved N)` |
+| `/session-info` | Session meta + triggers same token stats path |
+| `/usage` | Product credits when the billing path applies |
+| Headless JSON | `usage` when provider returns it |
 | OTEL metrics | `input` / `output` / `reasoning` / `cache_read` |
+| Scripts | `dump-prompt-journey.sh` · `logan-call.sh` · `usage-rollup.py` |
 
-### What Logan should feel like for devs (target)
+### Color legend (`/stats` + deep dive)
 
-```text
-/stats                  # session + day rollup
-/stats --by-model       # per provider/model
-/stats --export jsonl   # ~/.logan/stats/usage.jsonl
+| Color | Field |
+| --- | --- |
+| Teal | IN / system prompt |
+| Green | OUT / assistant |
+| Violet | CACHE / tools |
+| Amber | REASON / compact pressure |
+| Brand accent | $ / user messages |
 
-Breakdown per turn:
-  input_tokens
-  output_tokens
-  cache_read_tokens
-  cache_write_tokens   # when provider supports it
-  reasoning_tokens
-  estimated_cost_usd   # optional price table
-```
-
-Local ledger design lives in `examples/config/observability.toml` and
-`examples/scripts/usage-rollup.py` (aggregates headless JSON / jsonl).
+Local ledger extras: `examples/config/observability.toml` +
+`examples/scripts/usage-rollup.py`.
 
 ---
 
@@ -100,24 +112,21 @@ Local ledger design lives in `examples/config/observability.toml` and
 ```text
 classify task size/risk
    |
-   +-- trivial (docs typo, short Q)     -> model.fast   (e.g. gemini-flash, haiku, ollama)
-   +-- standard implement              -> model.default
-   +-- hard (arch, multi-file, debug)  -> model.premium
-   +-- verification / review           -> model.review (optional second pass)
+   +-- trivial (docs typo, short Q)     -> tier-fast   (flash, haiku, ollama)
+   +-- standard implement              -> tier-default
+   +-- hard (arch, multi-file, debug)  -> tier-premium
+   +-- offline / private               -> tier-local
 ```
 
-Today: configure named tiers in config and switch with `-m` / `/model`, or let
-the **auto-route skill** recommend a switch mid-session.
-
-Tomorrow (harness): pre-turn classifier that sets model before sampler call,
-with override flags:
+**Shipped:** pre-turn classifier via CLI:
 
 ```bash
 logan -p "…" --route auto
 logan -p "…" --route premium
+logan --route tier-local -p "…"
 ```
 
-Config sketch: [examples/config/auto-routing.toml](../examples/config/auto-routing.toml)
+Config: [examples/config/auto-routing.toml](../examples/config/auto-routing.toml)
 
 ---
 

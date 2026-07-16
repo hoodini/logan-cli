@@ -7,7 +7,11 @@ For humans **and** for coding agents / LLMs installing Logan on a machine.
 > **TL;DR (preferred):** from the repo root run  
 > `bash scripts/install-logan.sh`  
 > then `logan login` and `logan`.  
-> One-page guide: **[START_HERE.md](START_HERE.md)** · LLM paste prompt: **[LLM_INSTALL_PROMPT.md](LLM_INSTALL_PROMPT.md)**
+> One-page guide: **[START_HERE.md](START_HERE.md)** ·  
+> Token visibility: **[TOKEN_VISIBILITY.md](TOKEN_VISIBILITY.md)** ·  
+> LLM paste prompt: **[LLM_INSTALL_PROMPT.md](LLM_INSTALL_PROMPT.md)**  
+>
+> After any turn: **`/stats`** (API bill) · **`/context deep`** (real prompt text).
 
 ---
 

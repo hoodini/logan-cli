@@ -26,12 +26,17 @@ Author: Yuval Avidani (YUV.AI) · claws out for hard bugs
 
 Implemented now:
 
-- Context bar always shows **percentage**  
-- After every sample, last-turn **in / out / cache** from `PromptResponse._meta` (no `/stats` required)  
+- Context bar always shows **percentage** + last-turn **in / out / cache**  
+- Mid-tool-loop window fill updates the live **in** chip  
 - Near auto-compact threshold shows **`!`**  
 - Hover shows **composition + last-call usage** when known  
-- `/stats` still refreshes full breakdown + same status chip  
+- **`/stats`** colorful ledger (IN/OUT/CACHE/REASON/$)  
+- **`/context deep`** actual system prompt + message texts  
+- Dual-stack chips **`m · s · mcp`**  
+- Compact banner **before → after (saved N)**  
 - Auto-reflect hook **desktop/OSC notification** when it writes MEMORY.md  
+
+**Deep guide:** [TOKEN_VISIBILITY.md](TOKEN_VISIBILITY.md)
 
 ---
 
@@ -48,13 +53,14 @@ Implemented now:
 
 ---
 
-## Dual-stack status chip (planned UI)
+## Dual-stack status chip (shipped)
 
 ```text
-model claude-sonnet · search grok-search · mcp 3 · mem on
+m claude-sonnet · s grok-search · mcp 3
 ```
 
-Config already supports separate `default` and `web_search` models.
+Config: `[models] default` + `web_search`. See [WEB_SEARCH.md](WEB_SEARCH.md) and
+the full token story in [TOKEN_VISIBILITY.md](TOKEN_VISIBILITY.md).
 
 ---
 
