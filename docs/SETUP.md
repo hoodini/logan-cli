@@ -315,13 +315,18 @@ Useful slash commands:
 | Command | Purpose |
 | --- | --- |
 | `/model` | Switch LLM |
+| `/caveman full` | Terse talk mode (save tokens) - off/lite/full/ultra |
+| `/ponytail full` | YAGNI / minimal code mode |
+| `/modes` | Show mode status |
+| `/whoami grill` | Identity + stack interview → PROFILE.md |
+| `/improve` | Self-heal / self-improve dashboard |
 | `/memory on` | Enable memory this session |
 | `/remember ...` | Save a durable fact |
 | `/flush` | Rich session summary to memory |
-| `/skill self-improve` | Reflect on what worked / failed |
-| `/skill learn-user` | Update preference profile |
 | `/mcp` | MCP servers |
 | `/help` | Help |
+
+Modes + whoami + HyperFrames defaults: **[MODES.md](MODES.md)**
 
 ---
 

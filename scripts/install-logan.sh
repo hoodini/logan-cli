@@ -402,6 +402,78 @@ TOML
   sync_skills "${HOME}/.grok/skills" || true
   sync_skills "${HOME}/.claude/skills" || true
   sync_skills "${HOME}/.agents/skills" || true
+  # Native Logan skills from this repo (always refresh known names)
+  if [[ -n "${REPO_ROOT:-}" && -d "${REPO_ROOT}/skills" ]]; then
+    for d in "${REPO_ROOT}/skills"/*; do
+      [[ -d "${d}" ]] || continue
+      name="$(basename "${d}")"
+      dest="${LOGAN_HOME}/skills/${name}"
+      mkdir -p "${dest}"
+      cp -R "${d}/." "${dest}/"
+    done
+    log "Seeded native skills from ${REPO_ROOT}/skills"
+  fi
+
+  mkdir -p "${LOGAN_HOME}/rules" "${LOGAN_HOME}/memory"
+  if [[ ! -f "${LOGAN_HOME}/modes.toml" ]]; then
+    cat > "${LOGAN_HOME}/modes.toml" <<'TOML'
+# Logan communication / coding modes - toggle with /caveman /ponytail /modes
+[modes]
+caveman = "off"
+ponytail = "off"
+TOML
+  fi
+  if [[ ! -f "${LOGAN_HOME}/rules/logan-modes.md" ]]; then
+    cat > "${LOGAN_HOME}/rules/logan-modes.md" <<'MD'
+# Logan active modes (seed)
+
+Caveman: OFF · Ponytail: OFF
+
+Use `/caveman full` for terse talk (save tokens).
+Use `/ponytail full` for YAGNI / minimal code.
+Use `/whoami grill` for identity + stack memory.
+Use `/improve` for self-heal visibility.
+HyperFrames is the default video stack (`hyperframes-master` skill).
+MD
+  fi
+  if [[ ! -f "${LOGAN_HOME}/memory/PROFILE.md" ]]; then
+    if [[ -n "${REPO_ROOT:-}" && -f "${REPO_ROOT}/examples/config/PROFILE.template.md" ]]; then
+      cp -f "${REPO_ROOT}/examples/config/PROFILE.template.md" "${LOGAN_HOME}/memory/PROFILE.md"
+    else
+      cat > "${LOGAN_HOME}/memory/PROFILE.md" <<'MD'
+# PROFILE
+
+## Identity
+- Name:
+- Brand:
+
+## Links
+- Web:
+- GitHub:
+- X:
+
+## Tech stack defaults
+- Frontend:
+- Motion:
+- Video: HyperFrames (default)
+
+## Taste
+
+## Ongoing notes
+MD
+    fi
+  fi
+  if [[ ! -f "${LOGAN_HOME}/memory/IMPROVEMENTS.md" ]]; then
+    cat > "${LOGAN_HOME}/memory/IMPROVEMENTS.md" <<'MD'
+# IMPROVEMENTS
+
+Structured self-heal / self-improve journal. Append via `/improve` or hooks.
+
+MD
+  fi
+  if [[ ! -f "${LOGAN_HOME}/memory/MEMORY.md" && -n "${REPO_ROOT:-}" && -f "${REPO_ROOT}/examples/config/USER_PREFERENCES.template.md" ]]; then
+    cp -f "${REPO_ROOT}/examples/config/USER_PREFERENCES.template.md" "${LOGAN_HOME}/memory/MEMORY.md"
+  fi
 
   if [[ -n "${REPO_ROOT:-}" && -f "${REPO_ROOT}/examples/hooks/auto-reflect.json" ]]; then
     cp -f "${REPO_ROOT}/examples/hooks/auto-reflect.json" "${LOGAN_HOME}/hooks/" 2>/dev/null || true

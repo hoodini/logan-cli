@@ -258,6 +258,30 @@ yolo = false
 "@ | Set-Content -Path $config -Encoding UTF8
     Write-Log "Wrote $config"
   }
+
+  Ensure-Dir (Join-Path $LoganHome "rules")
+  $modes = Join-Path $LoganHome "modes.toml"
+  if (-not (Test-Path $modes)) {
+    @"
+[modes]
+caveman = "off"
+ponytail = "off"
+"@ | Set-Content -Path $modes -Encoding UTF8
+  }
+  $impr = Join-Path $LoganHome "memory\IMPROVEMENTS.md"
+  if (-not (Test-Path $impr)) {
+    "# IMPROVEMENTS`n" | Set-Content -Path $impr -Encoding UTF8
+  }
+  # Native skills from repo when InstallDir known
+  if ($script:LoganInstallDir -and (Test-Path (Join-Path $script:LoganInstallDir "skills"))) {
+    $srcSkills = Join-Path $script:LoganInstallDir "skills"
+    Get-ChildItem -Directory $srcSkills | ForEach-Object {
+      $dest = Join-Path $LoganHome "skills\$($_.Name)"
+      Ensure-Dir $dest
+      Copy-Item -Path (Join-Path $_.FullName "*") -Destination $dest -Recurse -Force
+    }
+    Write-Log "Seeded native skills from $srcSkills"
+  }
 }
 
 # ---------- main ----------

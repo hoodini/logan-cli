@@ -53,6 +53,10 @@ logan
 | `/context` | How full the window is |
 | `/context deep` | Real system prompt + messages |
 | `/goal Fix the bug` | Long multi-step work |
+| `/caveman full` | Terse talk - save tokens (off anytime) |
+| `/ponytail full` | YAGNI minimal code mode |
+| `/whoami grill` | Teach Logan who you are + stack |
+| `/improve` | See self-heal / what it learned |
 
 Bottom bar after each reply:
 
@@ -150,6 +154,7 @@ Tell the user: run logan, then /stats and /context deep after a turn.
 | --- | --- |
 | [docs/START_HERE.md](docs/START_HERE.md) | Super short |
 | [docs/SWOT.md](docs/SWOT.md) | Competitive SWOT |
+| [docs/MODES.md](docs/MODES.md) | Caveman / ponytail / whoami / improve |
 | [docs/TOKEN_VISIBILITY.md](docs/TOKEN_VISIBILITY.md) | Tokens explained |
 | [docs/BENCHMARK.md](docs/BENCHMARK.md) | Grok Build vs Logan tests |
 | [docs/SETUP.md](docs/SETUP.md) | Extra config |

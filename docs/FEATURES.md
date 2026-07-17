@@ -24,6 +24,11 @@ token visibility, auto-routing, goals, observability, and remote-agent use.
 | **Memory / self-improve** | **Yes (Logan)** | Memory + dream + skills + auto-reflect hooks |
 | **Smart auto model routing** | **`--route auto` shipped** | Heuristic classifier → `tier-*` before sample; skill still available |
 | **`/stats`** | **Shipped** | **Colorful** session ledger: IN/OUT/CACHE/REASON/$ by model (bold, high contrast) |
+| **`/caveman` · `/ponytail`** | **Shipped** | Token-saving talk + YAGNI code modes (off/lite/full/ultra) - sticky rules |
+| **`/modes`** | **Shipped** | Show caveman + ponytail status |
+| **`/whoami`** | **Shipped** | Identity profile grill + PROFILE.md memory |
+| **`/improve` · `/heal`** | **Shipped** | Self-heal / self-improve visibility journal |
+| **HyperFrames default** | **Shipped** | Native `hyperframes-master` skill + profile stack defaults |
 | **`/context deep`** | **Shipped** | **Actual** system prompt + chat history text for those tokens (not only counts) |
 | **Live status bar last-turn** | **Shipped** | Every sample: `in / out / c` from `PromptResponse._meta`; mid-tool window fill too |
 | **Dual-stack status chips** | **Shipped** | `m <model> · s <search> · mcp N` on status bar |

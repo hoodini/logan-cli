@@ -4,6 +4,8 @@
 Appends a short reflection stub so long-term memory can learn what sessions
 did. Hermes-style durable learning without weight training.
 
+Also maintains IMPROVEMENTS.md stubs for /improve visibility.
+
 Author: Yuval Avidani (YUV.AI) - https://yuv.ai
 """
 
@@ -69,22 +71,41 @@ def main() -> int:
         f"\n### {ts} · {event_name}\n"
         f"- session: `{session_id}`\n"
         f"- cwd: `{cwd}`\n"
-        f"- note: auto-reflect hook fired; run `/skill self-improve` or `/flush` "
-        f"for a rich LLM summary of what worked / failed.\n"
+        f"- note: auto-reflect hook fired. Run `/improve` for dashboard, "
+        f"`/improve why` for decision path, `/flush` for rich LLM summary.\n"
     )
 
     text = memory_md.read_text(encoding="utf-8")
     if "## Auto reflections" not in text:
         text = text.rstrip() + "\n\n## Auto reflections\n"
-    # Keep file from growing without bound: soft cap ~200k chars
     if len(text) > 200_000:
         text = text[:180_000] + "\n\n<!-- truncated by auto-reflect.py -->\n"
     memory_md.write_text(text.rstrip() + "\n" + block, encoding="utf-8")
 
-    # Desktop / terminal notification so the user sees self-learning fire
+    # Structured improve journal stub (visibility for /improve)
+    improvements = mem_dir / "IMPROVEMENTS.md"
+    if not improvements.exists():
+        improvements.write_text(
+            "# IMPROVEMENTS\n\nStructured self-heal / self-improve journal.\n\n",
+            encoding="utf-8",
+        )
+    imp_block = (
+        f"\n### {ts} · hook:{event_name}\n"
+        f"- **Trigger:** session lifecycle `{event_name}`\n"
+        f"- **Analyzed:** session `{session_id}` · cwd `{cwd}`\n"
+        f"- **Decision:** stub only - agent should fill after real fixes\n"
+        f"- **Changed:** (pending)\n"
+        f"- **Improved how:** (pending)\n"
+        f"- **Lesson for next time:** run `/improve why` after hard tasks\n"
+    )
+    imp_text = improvements.read_text(encoding="utf-8")
+    if len(imp_text) > 200_000:
+        imp_text = imp_text[:180_000] + "\n\n<!-- truncated -->\n"
+    improvements.write_text(imp_text.rstrip() + "\n" + imp_block, encoding="utf-8")
+
+    # Desktop / terminal notification
     title = "Logan learned"
-    body = f"Reflection saved ({event_name}). Check MEMORY.md · /stats for usage."
-    # Prefer stderr for OSC so JSON stdout stays clean for hook runners
+    body = f"Reflection saved ({event_name}). /improve · MEMORY.md"
     try:
         sys.stderr.write(f"\033]9;{title}: {body}\033\\")
         sys.stderr.write(f"\033]777;notify;{title};{body}\033\\")
@@ -108,7 +129,8 @@ def main() -> int:
         except Exception:
             pass
 
-    print(json.dumps({"ok": True, "wrote": str(memory_md), "event": event_name, "notified": True}))
+    # Hook protocol: empty JSON object is fine
+    print("{}")
     return 0
 
 

@@ -1,35 +1,46 @@
 # User Preferences - Logan
 
-Copy useful sections into `~/.logan/memory/MEMORY.md` under `## Preferences`.
-Maintained for **Yuval Avidani (YUV.AI)** - edit freely; Logan will search this
-when memory is enabled.
+Copy into `~/.logan/memory/MEMORY.md` (install may seed this).  
+Maintained for **Yuval Avidani (YUV.AI)** - edit freely; Logan searches this when memory is on.
 
 ## Preferences
 
 ### Identity
 - Name: Yuval Avidani
-- Brand: YUV.AI - AI Builder & Speaker
+- Brand: YUV.AI
 - Web: https://yuv.ai
 - GitHub: hoodini
 - X: @yuvalav
-- Writing: use plain hyphen `-` only - never em-dash or en-dash
+- Full profile: see `PROFILE.md` (`/whoami`)
 
 ### Engineering style
 - Prefer clear, production-minded changes over speculative rewrites
-- Explain what changed and why in plain language
+- Explain what changed and why in plain language (unless caveman mode is on)
 - Confirm before destructive or shared-system actions
 - Keep commits focused; do not push without explicit ask
+- Ponytail welcome when I want minimal code (`/ponytail full`)
 
 ### Product taste
 - Strong design systems, cinematic demos, high craft
 - Hebrew + English bilingual when relevant
 - Ship docs + diagrams with architecture work
+- **Video default: HyperFrames** (skills: hyperframes-master + workflow skills)
+
+### Tech stack defaults
+- Next.js, React, Three.js, GSAP, HyperFrames
+- Prefer HyperFrames over one-off ffmpeg slideshows for product/motion video
 
 ### What works well
-- (Logan / self-improve skill fills this after successful tasks)
+- (self-improve / dream fills after successful tasks)
 
 ### What fails / avoid
-- (Logan / self-improve skill fills this after failures)
+- (self-improve fills after failures)
 
 ## Lessons
-- (autoDream and /flush populate durable lessons here)
+- (autoDream and `/flush` populate durable lessons here)
+
+## Auto reflections
+- (Stop/SessionEnd hooks append stubs here)
+
+## Improve journal
+- See also `IMPROVEMENTS.md` and `/improve`

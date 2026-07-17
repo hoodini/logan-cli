@@ -32,6 +32,7 @@ pub mod imagine;
 pub mod imagine_video;
 pub mod import_claude;
 pub mod login;
+pub mod logan_modes;
 pub mod logout;
 pub mod loop_cmd;
 pub mod mcps;
@@ -137,6 +138,11 @@ pub fn builtin_commands() -> Vec<Arc<dyn SlashCommand>> {
         Arc::new(release_notes::ReleaseNotesCommand),
         Arc::new(config_agents::ConfigAgentsCommand),
         Arc::new(personas::PersonasCommand),
+        Arc::new(logan_modes::CavemanCommand),
+        Arc::new(logan_modes::PonytailCommand),
+        Arc::new(logan_modes::ModesCommand),
+        Arc::new(logan_modes::WhoamiCommand),
+        Arc::new(logan_modes::ImproveCommand),
         Arc::new(gboom::GboomCommand),
         Arc::new(scroll_debug::ScrollDebugCommand),
         Arc::new(debug::DebugCommand),
