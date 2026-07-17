@@ -19,7 +19,11 @@ Logan ships both as **native toggleable modes** - not a forced personality.
 | --- | --- |
 | `/caveman off\|lite\|full\|ultra` | Terse talk mode |
 | `/ponytail off\|lite\|full\|ultra` | Minimal code / YAGNI |
-| `/modes` | Show both |
+| `/think off\|lite\|full\|ultra` | Deep explain (yuvai-thinking) - exclusive with caveman |
+| `/modes` | Show all modes |
+| `/creative` | Creative stack map |
+| `/site [mouse\|parallax\|scroll] <video>` | Scrub / landing from video |
+| `/reel <video>` | Captioned HyperFrames reel |
 | `/whoami` | Show identity profile |
 | `/whoami grill` | Interview for socials + stack + taste |
 | `/whoami update <fact>` | Append a fact |
@@ -33,7 +37,9 @@ Logan ships both as **native toggleable modes** - not a forced personality.
 2. Mirrors sticky instructions to `~/.logan/rules/logan-modes.md`
 3. Global rules load every session - so the mode **sticks** until you turn it off
 
-You choose. Default seed is **both off**.
+**`/think` and `/caveman` are exclusive** - turning one on turns the other off.
+
+You choose. Default seed is **all off**.
 
 ## Whoami + memory
 

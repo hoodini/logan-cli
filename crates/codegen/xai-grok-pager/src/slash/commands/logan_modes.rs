@@ -1,8 +1,12 @@
-//! Logan native modes: `/caveman`, `/ponytail`, `/modes`, `/whoami`, `/improve`.
+//! Logan native modes + creative routes.
 //!
-//! Modes persist in `~/.logan/modes.toml` and are mirrored into
-//! `~/.logan/rules/logan-modes.md` so every session loads them as global rules.
-//! Skills live under `~/.logan/skills/{caveman,ponytail,whoami,self-improve,hyperframes-master}/`.
+//! Modes: `/caveman`, `/ponytail`, `/think`, `/modes`
+//! Profile/learn: `/whoami`, `/improve`
+//! Creative: `/site`, `/reel`, `/creative`
+//!
+//! Modes persist in `~/.logan/modes.toml` and mirror to
+//! `~/.logan/rules/logan-modes.md`. `/think` (yuvai-thinking) and `/caveman`
+//! are mutually exclusive - deep explain vs terse talk.
 
 use crate::slash::command::{
     AppCtx, ArgItem, CommandExecCtx, CommandResult, SlashCommand,
@@ -70,6 +74,8 @@ impl Intensity {
 struct ModesState {
     caveman: Intensity,
     ponytail: Intensity,
+    /// yuvai-thinking deep explain mode. Exclusive with caveman.
+    think: Intensity,
 }
 
 impl Default for ModesState {
@@ -77,6 +83,7 @@ impl Default for ModesState {
         Self {
             caveman: Intensity::Off,
             ponytail: Intensity::Off,
+            think: Intensity::Off,
         }
     }
 }
@@ -95,13 +102,12 @@ fn load_modes() -> ModesState {
         if let Some((k, v)) = line.split_once('=') {
             let k = k.trim();
             let v = v.trim().trim_matches('"').trim_matches('\'');
-            if k == "caveman" {
-                if let Some(i) = Intensity::parse(v) {
-                    state.caveman = i;
-                }
-            } else if k == "ponytail" {
-                if let Some(i) = Intensity::parse(v) {
-                    state.ponytail = i;
+            if let Some(i) = Intensity::parse(v) {
+                match k {
+                    "caveman" => state.caveman = i,
+                    "ponytail" => state.ponytail = i,
+                    "think" | "yuvai_thinking" | "yuvai-thinking" => state.think = i,
+                    _ => {}
                 }
             }
         }
@@ -116,14 +122,17 @@ fn save_modes(state: &ModesState) -> Result<(), String> {
     let toml = format!(
         r#"# Logan communication / coding modes
 # Author: Yuval Avidani (YUV.AI)
-# Toggle: /caveman /ponytail /modes
+# Toggle: /caveman /ponytail /think /modes
+# Note: caveman and think are mutually exclusive (terse vs deep explain).
 
 [modes]
 caveman = "{}"
 ponytail = "{}"
+think = "{}"
 "#,
         state.caveman.as_str(),
-        state.ponytail.as_str()
+        state.ponytail.as_str(),
+        state.think.as_str()
     );
     std::fs::write(modes_path(), toml).map_err(|e| e.to_string())?;
     write_rules_mirror(state)?;
@@ -134,13 +143,15 @@ fn write_rules_mirror(state: &ModesState) -> Result<(), String> {
     let mut body = String::from(
         r#"# Logan active modes (auto-generated)
 
-Do not edit by hand - use `/caveman`, `/ponytail`, or `/modes`.
+Do not edit by hand - use `/caveman`, `/ponytail`, `/think`, or `/modes`.
 Generated for every session as a global rule under `~/.logan/rules/`.
 
 "#,
     );
     match state.caveman {
-        Intensity::Off => body.push_str("## Caveman: OFF\nSpeak normally (clear, complete sentences).\n\n"),
+        Intensity::Off => {
+            body.push_str("## Caveman: OFF\nSpeak normally unless think mode is on.\n\n")
+        }
         level => {
             body.push_str(&format!(
                 "## Caveman: ON ({})\n\nFollow the **caveman** skill at intensity **{}**.\n\
@@ -152,7 +163,9 @@ Generated for every session as a global rule under `~/.logan/rules/`.
         }
     }
     match state.ponytail {
-        Intensity::Off => body.push_str("## Ponytail: OFF\nNormal engineering judgment (still avoid pointless bloat).\n\n"),
+        Intensity::Off => body.push_str(
+            "## Ponytail: OFF\nNormal engineering judgment (still avoid pointless bloat).\n\n",
+        ),
         level => {
             body.push_str(&format!(
                 "## Ponytail: ON ({})\n\nFollow the **ponytail** skill at intensity **{}**.\n\
@@ -163,11 +176,30 @@ Generated for every session as a global rule under `~/.logan/rules/`.
             ));
         }
     }
+    match state.think {
+        Intensity::Off => body.push_str(
+            "## Think (yuvai-thinking): OFF\nNormal explanations - not the full crumb cascade.\n\n",
+        ),
+        level => {
+            body.push_str(&format!(
+                "## Think (yuvai-thinking): ON ({})\n\n\
+                 Follow **yuvai-thinking** skill: every crumb, always the why, intuition before formula,\n\
+                 zero forward-references, zero assumed knowledge, real examples under the hood.\n\
+                 Skill path: `~/.logan/skills/yuvai-thinking/SKILL.md`\n\
+                 When think is on, prefer completeness of understanding over brevity.\n\n",
+                level.as_str()
+            ));
+        }
+    }
     body.push_str(
-        "## Always\n\
-         - HyperFrames is the default video stack when the user wants video/motion (skill `hyperframes-master`).\n\
-         - Prefer PROFILE.md + MEMORY.md for identity and stack preferences (`/whoami`).\n\
-         - Journal non-trivial fixes in IMPROVEMENTS.md (`/improve`).\n",
+        "## Always (creative stack)\n\
+         - **HyperFrames** is the default video engine (skill `hyperframes-master` + hyperframes/*).\n\
+         - **Landings from video**: prefer `cinematic-scrub-landing` (mouse scrub) or `parallax-landing-page` (scroll scrub) or `video-to-landing-page` (Apple sticky scroll).\n\
+         - **Captioned reels**: `video-edit` (transcript review before render, HE/EN).\n\
+         - Route ambiguous creative work via `yuv-pilot`.\n\
+         - PROFILE.md + MEMORY.md for identity/stack (`/whoami`).\n\
+         - Journal non-trivial fixes in IMPROVEMENTS.md (`/improve`).\n\
+         - Shortcuts: `/site <video>` · `/reel <video>` · `/creative` · `/think` · `/caveman`.\n",
     );
     std::fs::write(rules_path(), body).map_err(|e| e.to_string())
 }
@@ -201,12 +233,13 @@ fn set_mode(which: &str, args: &str) -> CommandResult {
     let trimmed = args.trim();
     if trimmed.is_empty() || trimmed.eq_ignore_ascii_case("status") {
         return CommandResult::Message(format!(
-            "Modes · caveman={} · ponytail={}\n\
+            "Modes · caveman={} · ponytail={} · think={}\n\
              Toggle: /{which} off|lite|full|ultra\n\
-             Both: /modes\n\
+             All: /modes · Creative: /creative · /site · /reel\n\
              Persist: {} + {}",
             state.caveman.as_str(),
             state.ponytail.as_str(),
+            state.think.as_str(),
             modes_path().display(),
             rules_path().display(),
         ));
@@ -216,19 +249,42 @@ fn set_mode(which: &str, args: &str) -> CommandResult {
             "Unknown level `{trimmed}`. Use: off | lite | full | ultra"
         ));
     };
+    let mut note = String::new();
     match which {
-        "caveman" => state.caveman = level,
+        "caveman" => {
+            state.caveman = level;
+            // Exclusive with think: deep explain vs terse talk.
+            if level != Intensity::Off && state.think != Intensity::Off {
+                state.think = Intensity::Off;
+                note.push_str(" (think turned off - exclusive with caveman)");
+            }
+        }
         "ponytail" => state.ponytail = level,
+        "think" => {
+            state.think = level;
+            if level != Intensity::Off && state.caveman != Intensity::Off {
+                state.caveman = Intensity::Off;
+                note.push_str(" (caveman turned off - exclusive with think)");
+            }
+        }
         _ => return CommandResult::Error("internal: unknown mode".into()),
     }
     if let Err(e) = save_modes(&state) {
         return CommandResult::Error(format!("Failed to save modes: {e}"));
     }
+    let skill_name = if which == "think" {
+        "yuvai-thinking"
+    } else {
+        which
+    };
     let skill_hint = if level == Intensity::Off {
-        format!("{which} off for new turns (rules updated). Existing chat may need a short reminder.")
+        format!(
+            "{which} off for new turns (rules updated).{note}"
+        )
     } else {
         format!(
-            "{which} → **{}**. Sticky rule written. Skill: ~/.logan/skills/{which}/SKILL.md\n\
+            "{which} → **{}**{note}. Sticky rule written.\n\
+             Skill: ~/.logan/skills/{skill_name}/SKILL.md\n\
              New sessions load automatically. This session: obey intensity now.",
             level.as_str()
         )
@@ -298,6 +354,37 @@ impl SlashCommand for PonytailCommand {
     }
 }
 
+// ── /think ────────────────────────────────────────────────────────────────
+
+pub struct ThinkCommand;
+
+impl SlashCommand for ThinkCommand {
+    fn name(&self) -> &str {
+        "think"
+    }
+    fn aliases(&self) -> &[&str] {
+        &["yuvai-thinking", "explain-mode", "teach"]
+    }
+    fn description(&self) -> &str {
+        "Deep explain mode (yuvai-thinking) - exclusive with caveman"
+    }
+    fn usage(&self) -> &str {
+        "/think [off|lite|full|ultra]"
+    }
+    fn takes_args(&self) -> bool {
+        true
+    }
+    fn arg_placeholder(&self) -> Option<&str> {
+        Some("[off|lite|full|ultra]")
+    }
+    fn suggest_args(&self, _ctx: &AppCtx, _q: &str) -> Option<Vec<ArgItem>> {
+        Some(mode_levels_suggestions())
+    }
+    fn run(&self, _ctx: &mut CommandExecCtx, args: &str) -> CommandResult {
+        set_mode("think", args)
+    }
+}
+
 // ── /modes ────────────────────────────────────────────────────────────────
 
 pub struct ModesCommand;
@@ -307,7 +394,7 @@ impl SlashCommand for ModesCommand {
         "modes"
     }
     fn description(&self) -> &str {
-        "Show caveman + ponytail mode status"
+        "Show caveman + ponytail + think mode status"
     }
     fn usage(&self) -> &str {
         "/modes"
@@ -319,15 +406,200 @@ impl SlashCommand for ModesCommand {
              | Mode | Level | Skill |\n\
              | --- | --- | --- |\n\
              | caveman | `{}` | talk less (tokens) |\n\
-             | ponytail | `{}` | build less (YAGNI) |\n\n\
-             Toggle: `/caveman …` · `/ponytail …`\n\
-             Profile: `/whoami` · Learn log: `/improve`\n\
+             | ponytail | `{}` | build less (YAGNI) |\n\
+             | think | `{}` | yuvai-thinking deep explain |\n\n\
+             Exclusive: `/think` ↔ `/caveman` (deep vs terse).\n\
+             Toggle: `/caveman …` · `/ponytail …` · `/think …`\n\
+             Creative: `/creative` · `/site <video>` · `/reel <video>`\n\
+             Profile: `/whoami` · Learn: `/improve`\n\
              State: `{}`\n\
-             Rules mirror: `{}`\n",
+             Rules: `{}`\n",
             state.caveman.as_str(),
             state.ponytail.as_str(),
+            state.think.as_str(),
             modes_path().display(),
             rules_path().display(),
+        ))
+    }
+}
+
+// ── /creative ─────────────────────────────────────────────────────────────
+
+pub struct CreativeCommand;
+
+impl SlashCommand for CreativeCommand {
+    fn name(&self) -> &str {
+        "creative"
+    }
+    fn aliases(&self) -> &[&str] {
+        &["stack", "yuv-stack"]
+    }
+    fn description(&self) -> &str {
+        "YUV.AI creative stack map - HyperFrames, scrub landings, reels"
+    }
+    fn usage(&self) -> &str {
+        "/creative"
+    }
+    fn run(&self, _ctx: &mut CommandExecCtx, _args: &str) -> CommandResult {
+        CommandResult::Message(
+            "## Logan creative stack (YUV.AI)\n\n\
+             | Intent | Command / skill |\n\
+             | --- | --- |\n\
+             | Mouse-scrub cinematic landing | `/site mouse video.mp4` · `cinematic-scrub-landing` |\n\
+             | Scroll-scrub parallax (one screen) | `/site parallax video.mp4` · `parallax-landing-page` |\n\
+             | Apple sticky scroll landing | `/site scroll video.mp4` · `video-to-landing-page` |\n\
+             | Captioned reel (16:9 + 9:16) | `/reel video.mp4` · `video-edit` |\n\
+             | HyperFrames HTML→MP4 | skill `hyperframes-master` + hyperframes/* |\n\
+             | Brand multi-output | skill `yuv-pilot` |\n\
+             | Deep teach / understand | `/think full` · `yuvai-thinking` |\n\n\
+             Skills install under `~/.logan/skills/` (seeded on install).\n\
+             Projects default: `~/Documents/yuv-projects/{landings,videos}/`.\n\
+             Docs: docs/MODES.md · docs/CREATIVE.md\n"
+                .into(),
+        )
+    }
+}
+
+// ── /site ─────────────────────────────────────────────────────────────────
+
+pub struct SiteCommand;
+
+impl SlashCommand for SiteCommand {
+    fn name(&self) -> &str {
+        "site"
+    }
+    fn aliases(&self) -> &[&str] {
+        &["landing", "scrub"]
+    }
+    fn description(&self) -> &str {
+        "Build cinematic landing from video (scrub / parallax / scroll)"
+    }
+    fn usage(&self) -> &str {
+        "/site [mouse|parallax|scroll] <video-path> [brand notes…]"
+    }
+    fn takes_args(&self) -> bool {
+        true
+    }
+    fn session_scoped(&self) -> bool {
+        true
+    }
+    fn arg_placeholder(&self) -> Option<&str> {
+        Some("[mouse|parallax|scroll] <video> [notes]")
+    }
+    fn suggest_args(&self, _ctx: &AppCtx, _q: &str) -> Option<Vec<ArgItem>> {
+        Some(vec![
+            ArgItem {
+                display: "mouse".into(),
+                match_text: "mouse".into(),
+                insert_text: "mouse ".into(),
+                description: "cinematic-scrub-landing (cursor scrubs video)".into(),
+            },
+            ArgItem {
+                display: "parallax".into(),
+                match_text: "parallax".into(),
+                insert_text: "parallax ".into(),
+                description: "parallax-landing-page (scroll scrubs frames)".into(),
+            },
+            ArgItem {
+                display: "scroll".into(),
+                match_text: "scroll".into(),
+                insert_text: "scroll ".into(),
+                description: "video-to-landing-page (Apple sticky scroll)".into(),
+            },
+        ])
+    }
+    fn run(&self, _ctx: &mut CommandExecCtx, args: &str) -> CommandResult {
+        let trimmed = args.trim();
+        if trimmed.is_empty() {
+            return CommandResult::Error(
+                "Usage: /site [mouse|parallax|scroll] <path-to-video> [brand notes]\n\
+                 Defaults to mouse (cinematic-scrub) if style omitted."
+                    .into(),
+            );
+        }
+        let (style, rest) = {
+            let mut parts = trimmed.splitn(2, char::is_whitespace);
+            let first = parts.next().unwrap_or("");
+            let rest = parts.next().unwrap_or("").trim();
+            match first.to_ascii_lowercase().as_str() {
+                "mouse" | "cinematic" | "scrub" => ("mouse", rest),
+                "parallax" | "parasites" => ("parallax", rest),
+                "scroll" | "apple" | "sticky" => ("scroll", rest),
+                _ => ("mouse", trimmed), // first token is path
+            }
+        };
+        if rest.is_empty() {
+            return CommandResult::Error(
+                "Provide a video path after the style (or as the only arg).".into(),
+            );
+        }
+        let (skill, label) = match style {
+            "parallax" => (
+                "parallax-landing-page",
+                "scroll-scrub single-viewport parallax landing",
+            ),
+            "scroll" => (
+                "video-to-landing-page",
+                "Apple-style sticky scroll-frame landing",
+            ),
+            _ => (
+                "cinematic-scrub-landing",
+                "mouse-scrub cinematic landing (golden template)",
+            ),
+        };
+        CommandResult::PassThrough(format!(
+            "Use the Logan skill **{skill}** now ({label}).\n\
+             Source video / args: {rest}\n\
+             Follow that skill's workflow end-to-end (hard rules, save paths, verification).\n\
+             Prefer YUV.AI brand defaults from PROFILE.md / yuv-design-system when relevant.\n\
+             Save under ~/Documents/yuv-projects/landings/<slug>/ unless the user overrode.\n\
+             When done, print the output path and how to open it."
+        ))
+    }
+}
+
+// ── /reel ─────────────────────────────────────────────────────────────────
+
+pub struct ReelCommand;
+
+impl SlashCommand for ReelCommand {
+    fn name(&self) -> &str {
+        "reel"
+    }
+    fn aliases(&self) -> &[&str] {
+        &["caption", "video-edit"]
+    }
+    fn description(&self) -> &str {
+        "Captioned showcase / reel via video-edit + HyperFrames"
+    }
+    fn usage(&self) -> &str {
+        "/reel <video-path> [notes…]"
+    }
+    fn takes_args(&self) -> bool {
+        true
+    }
+    fn session_scoped(&self) -> bool {
+        true
+    }
+    fn arg_placeholder(&self) -> Option<&str> {
+        Some("<video-path> [notes]")
+    }
+    fn run(&self, _ctx: &mut CommandExecCtx, args: &str) -> CommandResult {
+        let trimmed = args.trim();
+        if trimmed.is_empty() {
+            return CommandResult::Error(
+                "Usage: /reel <path-to-video> [notes]\n\
+                 Runs skill video-edit (transcript review before render, 16:9 + 9:16)."
+                    .into(),
+            );
+        }
+        CommandResult::PassThrough(format!(
+            "Use the Logan skill **video-edit** now (captioned HyperFrames showcase).\n\
+             Source: {trimmed}\n\
+             Follow the full pipeline: transcribe → pause for transcript_review → liquid-glass captions →\n\
+             render both 16:9 and 9:16. Hebrew+English as needed. Use HyperFrames skills for render.\n\
+             Save under ~/Documents/yuv-projects/videos/<slug>/.\n\
+             Do not skip the human transcript approval step."
         ))
     }
 }
@@ -520,14 +792,15 @@ impl SlashCommand for ImproveCommand {
             let mem_tail = read_file_capped(&memory, 3000);
             return CommandResult::Message(format!(
                 "## Improve / heal dashboard\n\n\
-                 **Modes:** caveman=`{}` ponytail=`{}`\n\n\
+                 **Modes:** caveman=`{}` ponytail=`{}` think=`{}`\n\n\
                  ### reflections.log (tail)\n```\n{rlog}\n```\n\n\
                  ### IMPROVEMENTS.md\n```markdown\n{impr}\n```\n\n\
                  ### MEMORY.md (tail)\n```markdown\n{mem_tail}\n```\n\n\
-                 Steer: `/improve why` · ask me to journal a lesson · `/whoami` · `/flush`\n\
+                 Steer: `/improve why` · `/whoami` · `/think full` · `/flush`\n\
                  Files: `{}` · `{}`",
                 modes.caveman.as_str(),
                 modes.ponytail.as_str(),
+                modes.think.as_str(),
                 reflections.display(),
                 improvements.display(),
             ));
@@ -580,10 +853,12 @@ mod tests {
         let mut s = ModesState::default();
         s.caveman = Intensity::Full;
         s.ponytail = Intensity::Lite;
+        s.think = Intensity::Off;
         save_modes(&s).unwrap();
         let loaded = load_modes();
         assert_eq!(loaded.caveman, Intensity::Full);
         assert_eq!(loaded.ponytail, Intensity::Lite);
+        assert_eq!(loaded.think, Intensity::Off);
         assert!(rules_path().exists());
         unsafe {
             std::env::remove_var("LOGAN_HOME");

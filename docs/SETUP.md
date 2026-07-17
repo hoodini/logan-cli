@@ -316,8 +316,11 @@ Useful slash commands:
 | --- | --- |
 | `/model` | Switch LLM |
 | `/caveman full` | Terse talk mode (save tokens) - off/lite/full/ultra |
+| `/think full` | Deep explain (yuvai-thinking) - exclusive with caveman |
 | `/ponytail full` | YAGNI / minimal code mode |
-| `/modes` | Show mode status |
+| `/modes` · `/creative` | Mode status · creative stack map |
+| `/site mouse clip.mp4` | Cinematic mouse-scrub landing |
+| `/reel clip.mp4` | Captioned HyperFrames reel |
 | `/whoami grill` | Identity + stack interview → PROFILE.md |
 | `/improve` | Self-heal / self-improve dashboard |
 | `/memory on` | Enable memory this session |
@@ -326,7 +329,7 @@ Useful slash commands:
 | `/mcp` | MCP servers |
 | `/help` | Help |
 
-Modes + whoami + HyperFrames defaults: **[MODES.md](MODES.md)**
+Modes: **[MODES.md](MODES.md)** · Creative stack: **[CREATIVE.md](CREATIVE.md)**
 
 ---
 

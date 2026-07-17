@@ -417,20 +417,27 @@ TOML
   mkdir -p "${LOGAN_HOME}/rules" "${LOGAN_HOME}/memory"
   if [[ ! -f "${LOGAN_HOME}/modes.toml" ]]; then
     cat > "${LOGAN_HOME}/modes.toml" <<'TOML'
-# Logan communication / coding modes - toggle with /caveman /ponytail /modes
+# Logan communication / coding modes
+# Toggle: /caveman /ponytail /think /modes
+# caveman and think are exclusive
 [modes]
 caveman = "off"
 ponytail = "off"
+think = "off"
 TOML
   fi
   if [[ ! -f "${LOGAN_HOME}/rules/logan-modes.md" ]]; then
     cat > "${LOGAN_HOME}/rules/logan-modes.md" <<'MD'
 # Logan active modes (seed)
 
-Caveman: OFF · Ponytail: OFF
+Caveman: OFF · Ponytail: OFF · Think: OFF
 
 Use `/caveman full` for terse talk (save tokens).
+Use `/think full` for deep explain (yuvai-thinking) - exclusive with caveman.
 Use `/ponytail full` for YAGNI / minimal code.
+Use `/site mouse video.mp4` for cinematic scrub landings.
+Use `/reel video.mp4` for captioned HyperFrames reels.
+Use `/creative` for the full stack map.
 Use `/whoami grill` for identity + stack memory.
 Use `/improve` for self-heal visibility.
 HyperFrames is the default video stack (`hyperframes-master` skill).

@@ -38,7 +38,10 @@ config, you do **not** need a Grok session - those keys win for that model.
 | --- | --- |
 | `/stats` | Token bill |
 | `/context deep` | Real prompt text |
+| `/creative` | HyperFrames + scrub landings map |
+| `/think full` | Deep explain mode |
+| `/site mouse clip.mp4` | Cinematic landing from video |
 
 ## AI paste
 
-See [LLM_INSTALL_PROMPT.md](LLM_INSTALL_PROMPT.md)
+See [LLM_INSTALL_PROMPT.md](LLM_INSTALL_PROMPT.md) · [CREATIVE.md](CREATIVE.md) · [MODES.md](MODES.md)

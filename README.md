@@ -4,10 +4,11 @@
 
 # Logan
 
-**A coding agent in your terminal.**  
-It edits code, runs commands, and **shows every token you spend**.
+**A coding agent in your terminal** - with **token visibility**, **toggleable modes**, and a **native creative stack** for HyperFrames video + cinematic scrub landings.
 
 By [Yuval Avidani (YUV.AI)](https://yuv.ai) · inspired by Wolverine · fork of [xAI Grok Build](https://github.com/xai-org/grok-build) (Apache-2.0)
+
+> **Logan ships cinematic product experiences** - HyperFrames video, scroll/mouse-scrub 3D-feeling sites, and full understanding when you turn on `/think` - with tokens you can see.
 
 ---
 
@@ -25,7 +26,7 @@ curl -fsSL https://raw.githubusercontent.com/hoodini/logan-cli/main/scripts/inst
 irm https://raw.githubusercontent.com/hoodini/logan-cli/main/scripts/install-logan.ps1 | iex
 ```
 
-That single command gets Logan, puts it on your PATH, sets up `~/.logan`, and starts the app in a normal terminal.
+That single command gets Logan, puts it on your PATH, seeds skills + modes, sets up `~/.logan`, and starts the app.
 
 <p align="center">
   <img src="docs/assets/infographic-one-command-install.jpg" alt="Logan one-command install: paste, login, code" width="100%"/>
@@ -50,13 +51,16 @@ logan
 | --- | --- |
 | `hi` | Chat |
 | `/stats` | Tokens: input / output / cache / $ |
-| `/context` | How full the window is |
 | `/context deep` | Real system prompt + messages |
 | `/goal Fix the bug` | Long multi-step work |
-| `/caveman full` | Terse talk - save tokens (off anytime) |
-| `/ponytail full` | YAGNI minimal code mode |
+| `/caveman full` | Terse talk - save tokens |
+| `/think full` | Deep explain (yuvai-thinking) - exclusive with caveman |
+| `/ponytail full` | YAGNI minimal code |
 | `/whoami grill` | Teach Logan who you are + stack |
-| `/improve` | See self-heal / what it learned |
+| `/site mouse clip.mp4` | Cinematic mouse-scrub landing |
+| `/reel clip.mp4` | Captioned HyperFrames reel (16:9 + 9:16) |
+| `/creative` | Full creative stack map |
+| `/improve` | Self-heal / what it learned |
 
 Bottom bar after each reply:
 
@@ -70,6 +74,41 @@ m grok-4.5 · 24K/200K 12% · in 2.4K out 180 c 1.2K
 
 ---
 
+## Creative stack (the moat)
+
+Logan ships skills for **stunning product video + web**, not only CRUD:
+
+| Intent | Command | Skill |
+| --- | --- | --- |
+| Mouse-scrub hero landing | `/site mouse video.mp4` | `cinematic-scrub-landing` |
+| Scroll-scrub parallax | `/site parallax video.mp4` | `parallax-landing-page` |
+| Apple sticky scroll landing | `/site scroll video.mp4` | `video-to-landing-page` |
+| Captioned reel | `/reel video.mp4` | `video-edit` + HyperFrames |
+| HTML → MP4 engine | (auto) | `hyperframes-master` |
+| Deep understanding | `/think full` | `yuvai-thinking` |
+| Brand multi-output | ask / pilot | `yuv-pilot` |
+
+Defaults save under `~/Documents/yuv-projects/{landings,videos}/`.
+
+Full map: **[docs/CREATIVE.md](docs/CREATIVE.md)** · modes: **[docs/MODES.md](docs/MODES.md)** · showcase: **[examples/showcase/](examples/showcase/)**
+
+Also: [hoodini/ai-agents-skills](https://github.com/hoodini/ai-agents-skills) · [HyperFrames](https://github.com/heygen-com/hyperframes) · [effects.yuv.ai](https://effects.yuv.ai)
+
+---
+
+## Modes you control
+
+| Mode | Command | Meaning |
+| --- | --- | --- |
+| Caveman | `/caveman off\|lite\|full\|ultra` | Talk less - save output tokens |
+| Ponytail | `/ponytail off\|lite\|full\|ultra` | Build less - YAGNI |
+| Think | `/think off\|lite\|full\|ultra` | Teach every crumb (yuvai-thinking) |
+| Status | `/modes` | Show all |
+
+**`/think` and `/caveman` are exclusive** - deep explain vs terse talk. Sticky via `~/.logan/modes.toml` + `~/.logan/rules/logan-modes.md`.
+
+---
+
 ## Why Logan feels different
 
 | Promise | How |
@@ -77,7 +116,9 @@ m grok-4.5 · 24K/200K 12% · in 2.4K out 180 c 1.2K
 | Never fly blind on cost | Live `in/out/c` bar + colorful `/stats` |
 | See the real prompt | `/context deep` reads system prompt + history text |
 | Install without a thesis | One paste on macOS, Linux, Windows |
-| Multi-LLM | xAI, OpenAI-compat, Anthropic, local - your choice |
+| Creative product craft | HyperFrames + scrub landings + reels |
+| Understand everything | `/think` + `/improve why` + whoami memory |
+| Multi-LLM | xAI, OpenAI-compat, Anthropic, local |
 | Open | Apache-2.0 fork you can audit and extend |
 
 <p align="center">
@@ -104,12 +145,12 @@ Full write-up: **[docs/SWOT.md](docs/SWOT.md)**
 | --- | --- | --- |
 | GitHub Copilot | IDE + GitHub org | Open terminal agent + token deep-dive |
 | Claude Code | Anthropic coding agent | Multi-LLM + `/context deep` + install UX |
-| Cursor | AI IDE | Headless/TUI agent + cost clarity |
+| Cursor | AI IDE | Headless/TUI agent + cost clarity + creative stack |
 | Hermes | Learning personal agent | Code harness + spend visibility |
 | OpenClaw | Life/skills automation | Repo-first coding + context text audit |
-| **Logan** | **Transparent coding CLI** | **Live tokens · one command · open** |
+| **Logan** | **Transparent creative coding CLI** | **Tokens · one command · HyperFrames · scrub sites · /think** |
 
-We do **not** claim Copilot/Cursor IDE parity. We claim: **never fly blind on tokens**, **install in one paste**, **stay open**.
+We do **not** claim Copilot/Cursor IDE parity. We claim: **never fly blind on tokens**, **install in one paste**, **ship cinematic product work**, **stay open**.
 
 ---
 
@@ -134,8 +175,8 @@ Windows PowerShell:
 irm https://raw.githubusercontent.com/hoodini/logan-cli/main/scripts/install-logan.ps1 | iex
 
 Then: logan --version
-If needed: logan login
-Tell the user: run logan, then /stats and /context deep after a turn.
+If needed: logan login  (or logan login --from-grok if Grok Build is already signed in)
+Tell the user: run logan, then try /stats, /creative, /site, /think full
 ```
 
 ---
@@ -153,13 +194,16 @@ Tell the user: run logan, then /stats and /context deep after a turn.
 | Doc | For |
 | --- | --- |
 | [docs/START_HERE.md](docs/START_HERE.md) | Super short |
+| [docs/CREATIVE.md](docs/CREATIVE.md) | HyperFrames + scrub landings + reels |
+| [docs/MODES.md](docs/MODES.md) | Caveman / ponytail / think / whoami / improve |
 | [docs/SWOT.md](docs/SWOT.md) | Competitive SWOT |
-| [docs/MODES.md](docs/MODES.md) | Caveman / ponytail / whoami / improve |
 | [docs/TOKEN_VISIBILITY.md](docs/TOKEN_VISIBILITY.md) | Tokens explained |
 | [docs/BENCHMARK.md](docs/BENCHMARK.md) | Grok Build vs Logan tests |
 | [docs/SETUP.md](docs/SETUP.md) | Extra config |
 | [docs/FEATURES.md](docs/FEATURES.md) | Full list |
 | [docs/assets/README.md](docs/assets/README.md) | Image sources |
+| [skills/README.md](skills/README.md) | Native skills |
+| [examples/showcase/](examples/showcase/) | Golden creative paths |
 
 ---
 
