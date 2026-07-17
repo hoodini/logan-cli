@@ -13,6 +13,8 @@ By [Yuval Avidani (YUV.AI)](https://yuv.ai) · inspired by Wolverine · fork of 
 > Active skills start empty. Modes start off. No forced HyperFrames, no forced yuvai-thinking, no forced caveman.  
 > You add what you want - and remove it anytime.
 
+**Repo (prod):** [github.com/hoodini/logan-cli](https://github.com/hoodini/logan-cli)
+
 ---
 
 ## Install (one command)
@@ -50,6 +52,39 @@ Session / Grok import is for default xAI models. See [docs/SETUP.md](docs/SETUP.
 
 ---
 
+## Update (keep Logan current)
+
+### Inside the TUI (every time)
+
+```text
+/update              # GitHub main via install script (background rebuild)
+/update status       # tail ~/.logan/logs/update.log
+/update check        # check release channel only
+/update release      # published releases (same idea as `logan update`)
+/update help
+```
+
+When the log shows `finished exit=0`, **quit Logan and start again**:
+
+```bash
+logan --version
+logan
+```
+
+### Outside the TUI
+
+```bash
+# release channel
+logan update
+
+# or full reinstall from GitHub main (no auto-start)
+curl -fsSL https://raw.githubusercontent.com/hoodini/logan-cli/main/scripts/install-logan.sh | LOGAN_INSTALL_NO_START=1 bash
+```
+
+> First time after this feature ships: if `/update` is unknown, run the install line above once outside the TUI, then use `/update` forever after.
+
+---
+
 ## First 5 minutes
 
 | You type | What you get |
@@ -58,14 +93,12 @@ Session / Grok import is for default xAI models. See [docs/SETUP.md](docs/SETUP.
 | `/stats` | Tokens: input / output / cache / $ |
 | `/context deep` | Real system prompt + messages |
 | `/goal Fix the bug` | Long multi-step work |
+| `/update` | Pull latest Logan from GitHub (then restart) |
 | `/skills catalog` | Optional library (not installed yet) |
 | `/skills list` | What **you** installed (starts empty) |
 | `/skills add pack modes` | Opt-in: caveman, think, ponytail, whoami, self-improve |
 | `/skills add pack creative` | Opt-in: HyperFrames, scrub landings, reels |
 | `/skills remove <name>` | Drop a skill you no longer want |
-| `/update` | Pull latest from GitHub main (background) - then restart |
-| `/update check` | Check release channel without installing |
-| `/update status` | Tail last update log |
 
 Bottom bar after each reply:
 
@@ -156,6 +189,7 @@ LOGAN_SYNC_SIBLING_SKILLS=1 …      # also copy from ~/.claude / ~/.grok skills
 | Never fly blind on cost | Live `in/out/c` bar + colorful `/stats` |
 | See the real prompt | `/context deep` |
 | Install without a thesis | One paste on macOS, Linux, Windows |
+| Stay current | `/update` from inside the TUI |
 | You compose the agent | Empty skills by default - add/remove packs |
 | Creative when you want it | Opt-in HyperFrames + scrub + reels |
 | Deep think when you want it | Opt-in yuvai-thinking via `/skills` + `/think` |
@@ -189,38 +223,10 @@ Full write-up: **[docs/SWOT.md](docs/SWOT.md)**
 | Cursor | AI IDE | Headless/TUI + cost clarity + opt-in creative pack |
 | Hermes | Learning personal agent | Code harness + spend visibility |
 | OpenClaw | Life/skills automation | Repo-first coding + context text audit |
-| **Logan** | **Transparent coding CLI you compose** | **Tokens · empty-by-default skills · opt-in packs** |
+| **Logan** | **Transparent coding CLI you compose** | **Tokens · empty-by-default skills · `/update` · opt-in packs** |
 
 We do **not** claim Copilot/Cursor IDE parity.  
 We claim: **never fly blind on tokens**, **install in one paste**, **you own the skill set**, **stay open**.
-
----
-
-## Update Logan
-
-**Inside the TUI (every time):**
-
-```text
-/update              # GitHub main via install script (background)
-/update status       # watch log
-/update check        # release channel only
-/update release      # published releases (logan update)
-```
-
-When the log shows `finished exit=0`, quit and start again:
-
-```bash
-logan --version
-logan
-```
-
-**Outside the TUI:**
-
-```bash
-logan update                 # release channel
-# or rebuild from source install:
-curl -fsSL https://raw.githubusercontent.com/hoodini/logan-cli/main/scripts/install-logan.sh | LOGAN_INSTALL_NO_START=1 bash
-```
 
 ---
 
@@ -251,6 +257,7 @@ Important defaults:
 - Active skills start EMPTY. Catalog is available but not enabled.
 - Do NOT claim thinking/creative modes are pre-enabled.
 - User opts in: /skills catalog · /skills add pack modes · /skills add pack creative
+- Updates: inside TUI use /update (then restart). Outside: logan update OR re-run install with LOGAN_INSTALL_NO_START=1
 - Then optional: /think full · /caveman full · /site · /reel
 Tell the user to start with /stats and /skills catalog.
 ```

@@ -38,10 +38,19 @@ config, you do **not** need a Grok session - those keys win for that model.
 | --- | --- |
 | `/stats` | Token bill |
 | `/context deep` | Real prompt text |
+| `/update` | Pull latest from GitHub (background) - then restart |
+| `/update status` | Tail update log |
 | `/skills catalog` | Optional skills (empty active set by default) |
 | `/skills add pack creative` | Opt in to HyperFrames + scrub stack |
-| `/update` | Pull latest Logan from GitHub (then restart) |
 | `/think full` | Only after `/skills add yuvai-thinking` |
+
+## Update outside the TUI
+
+```bash
+logan update
+# or:
+curl -fsSL https://raw.githubusercontent.com/hoodini/logan-cli/main/scripts/install-logan.sh | LOGAN_INSTALL_NO_START=1 bash
+```
 
 ## AI paste
 
