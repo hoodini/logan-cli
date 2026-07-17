@@ -34,10 +34,13 @@ That single command gets Logan, puts it on your PATH, sets up `~/.logan`, and st
 ### Login
 
 ```bash
-logan login
+logan login                 # browser - xAI user account (same idea as Grok Build)
+logan login --from-grok     # reuse ~/.grok/auth.json if you already use Grok Build
 # or: export XAI_API_KEY="your-key"
 logan
 ```
+
+**Which credential wins?** Per-model `api_key`/`env_key` (Claude, OpenAI, Ollama, ...) always wins for that model. Grok session / import is for **default xAI** models. See [docs/SETUP.md](docs/SETUP.md#auth-vs-which-llm-you-use).
 
 ---
 

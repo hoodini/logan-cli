@@ -1761,6 +1761,7 @@ async fn async_main() -> Result<()> {
                 legacy: _,
                 oauth,
                 device_auth,
+                from_grok,
                 devbox,
             } => {
                 init_tracing_simple("cli");
@@ -1769,7 +1770,10 @@ async fn async_main() -> Result<()> {
                     .map_err(|e| anyhow::anyhow!("Failed to load config: {e}"))?;
                 let config = AgentConfig::new_from_toml_cfg(&config)
                     .map_err(|e| anyhow::anyhow!("Failed to create agent config: {e}"))?;
-                xai_grok_shell::auth::run_cli_login(&config, oauth, device_auth, devbox).await?;
+                xai_grok_shell::auth::run_cli_login_with_options(
+                    &config, oauth, device_auth, devbox, from_grok,
+                )
+                .await?;
                 println!();
                 xai_grok_shell::instrumentation::finalize_and_exit(0);
             }

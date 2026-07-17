@@ -21,8 +21,38 @@ After this guide you should have:
 
 1. `logan` on PATH (`~/.local/bin` **and** `~/.logan/bin` - same binary)  
 2. `~/.logan/config.toml` with memory + compat skills/MCP  
-3. Auth via `logan login` (xAI / same as Grok Build) or `XAI_API_KEY`  
+3. Auth via account login, Grok Build import, or `XAI_API_KEY` (see below)  
 4. A first successful prompt + `/stats` in the TUI  
+
+### Auth vs which LLM you use
+
+These are **two different layers**:
+
+| Layer | What it decides | How you set it |
+| --- | --- | --- |
+| **Session / account** | Identity for **default xAI** models | `logan login`, `logan login --from-grok`, or auto-import from `~/.grok` |
+| **Per-model keys (BYOK)** | Which **LLM endpoint** answers | `[model.*] api_key` / `env_key` / `base_url` in config |
+| **Env API key** | Fallback for xAI when no session | `XAI_API_KEY` |
+
+**Resolution order for each turn** (already in the agent):
+
+1. Selected model has its own `api_key` / `env_key` → **that LLM** (Grok session is ignored for the request)  
+2. Else Logan session in `~/.logan/auth.json` (OIDC) → xAI account  
+3. Else `XAI_API_KEY`  
+
+**Grok Build import rules:**
+
+- **Auto:** if Logan has no usable session, Logan may copy OIDC from `~/.grok/auth.json`  
+- **Skip auto when:** you set `XAI_API_KEY`, pin `[auth] preferred_method = "api_key"`, set `LOGAN_NO_IMPORT_GROK_AUTH=1`, or ran `logan logout` (sentinel)  
+- **Explicit:** `logan login --from-grok` always copies (clears the logout sentinel)  
+- **Pin OIDC only:** `[auth] preferred_method = "oidc"`  
+
+```bash
+logan login              # browser (xAI user)
+logan login --from-grok  # reuse Grok Build account session
+logan login --device-auth
+export XAI_API_KEY=...   # no browser; wins only when no session (unless preferred_method=api_key)
+```
 
 ---
 

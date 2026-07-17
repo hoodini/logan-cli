@@ -297,7 +297,7 @@ impl AuthManager {
             .map(PathBuf::from)
             .unwrap_or_else(|_| grok_home.join("auth.json"));
 
-        let (auth, auth_read_detail, initial_disk_state) = match read_auth_json(&path) {
+        let (mut auth, mut auth_read_detail, mut initial_disk_state) = match read_auth_json(&path) {
             Ok(map) => {
                 let found = lookup_auth(&map, &scope);
                 // If lookup_auth skipped a legacy WebLogin token, remove the
@@ -353,6 +353,54 @@ impl AuthManager {
                 (None, detail, state)
             }
         };
+
+        // When Logan has no usable session, optionally adopt Grok Build's
+        // ~/.grok/auth.json (see import_grok for precedence / opt-outs).
+        let needs_import = match &auth {
+            None => true,
+            Some(a) => is_expired(a),
+        };
+        if needs_import {
+            use crate::auth::import_grok::{ImportGrokAuthResult, ImportPolicy, try_import_grok_build_auth};
+            match try_import_grok_build_auth(
+                grok_home,
+                &path,
+                &scope,
+                ImportPolicy::auto(&grok_com_config),
+            ) {
+                ImportGrokAuthResult::Imported { scopes, email, source } => {
+                    tracing::info!(
+                        scopes,
+                        email = email.as_deref().unwrap_or(""),
+                        source = %source.display(),
+                        "auth: seeded Logan session from Grok Build"
+                    );
+                    if let Ok(map) = read_auth_json(&path) {
+                        auth = lookup_auth(&map, &scope);
+                        initial_disk_state = if auth.is_some() {
+                            DiskAuthState::Ok
+                        } else {
+                            DiskAuthState::EntryMissing
+                        };
+                        auth_read_detail = serde_json::json!({
+                            "read": "ok",
+                            "imported_from_grok_build": true,
+                            "source": source.display().to_string(),
+                            "resolved_path": path.display().to_string(),
+                            "found": auth.is_some(),
+                            "auth_mode": auth.as_ref().map(|a| format!("{:?}", a.auth_mode)),
+                        });
+                    }
+                }
+                ImportGrokAuthResult::Skipped { reason } => {
+                    tracing::debug!(
+                        reason = reason.as_str(),
+                        "auth: did not import Grok Build credentials"
+                    );
+                }
+            }
+        }
+
         xai_grok_telemetry::unified_log::info(
             "AuthManager::new auth.json load result",
             None,

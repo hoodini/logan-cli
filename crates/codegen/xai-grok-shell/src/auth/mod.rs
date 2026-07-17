@@ -7,6 +7,7 @@ pub mod device_code;
 pub mod error;
 mod external_auth;
 mod flow;
+pub(crate) mod import_grok;
 mod jwt;
 pub(crate) mod manager;
 mod model;
@@ -28,7 +29,11 @@ pub(crate) use flow::{
 pub use flow::{
     AuthUrlInfo, AuthUrlMode, LoginTransportOverride, LogoutResult, ensure_authenticated,
     ensure_authenticated_or_noninteractive, ensure_authenticated_with_override, perform_logout,
-    run_cli_login, run_cli_logout, try_ensure_fresh_auth,
+    run_cli_login, run_cli_login_with_options, run_cli_logout, try_ensure_fresh_auth,
+};
+pub use import_grok::{
+    ImportGrokAuthResult, ImportPolicy, ImportSkipReason, clear_no_import_sentinel,
+    grok_build_home, try_import_grok_build_auth, write_no_import_sentinel,
 };
 pub use jwt::{is_jwt_expired_or_near, parse_jwt_expiration};
 mod meta;

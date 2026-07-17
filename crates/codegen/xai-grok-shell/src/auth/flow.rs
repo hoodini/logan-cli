@@ -869,6 +869,22 @@ pub async fn run_cli_login(
     device_auth: bool,
     devbox: bool,
 ) -> anyhow::Result<()> {
+    run_cli_login_with_options(config, oauth, device_auth, devbox, false).await
+}
+
+/// Like [`run_cli_login`], with optional `from_grok` (copy `~/.grok/auth.json`
+/// into Logan without opening a browser).
+pub async fn run_cli_login_with_options(
+    config: &crate::agent::config::Config,
+    oauth: bool,
+    device_auth: bool,
+    devbox: bool,
+    from_grok: bool,
+) -> anyhow::Result<()> {
+    if from_grok {
+        return run_cli_login_from_grok(config).await;
+    }
+
     let login_override = LoginTransportOverride::from_flags(oauth, device_auth);
 
     // Mirror `run_auth_flow_inner`'s precedence: enterprise OIDC (oidc=Some,
@@ -938,7 +954,66 @@ pub async fn run_cli_login(
         }
         _ => {}
     }
+    // Successful browser/device login means the user wants Logan credentials;
+    // clear the logout "do not re-import" sentinel.
+    crate::auth::import_grok::clear_no_import_sentinel(&grok_home::grok_home());
     Ok(())
+}
+
+/// Copy a Grok Build session (`~/.grok/auth.json`) into Logan without a browser.
+async fn run_cli_login_from_grok(config: &crate::agent::config::Config) -> anyhow::Result<()> {
+    use crate::auth::import_grok::{
+        ImportGrokAuthResult, ImportPolicy, ImportSkipReason, try_import_grok_build_auth,
+    };
+
+    let logan_home = grok_home::grok_home();
+    let auth_path = logan_home.join("auth.json");
+    let scope = config.grok_com_config.auth_scope();
+    let result = try_import_grok_build_auth(
+        &logan_home,
+        &auth_path,
+        &scope,
+        ImportPolicy::force_from_cli(&config.grok_com_config),
+    );
+
+    match result {
+        ImportGrokAuthResult::Imported {
+            scopes,
+            email,
+            source,
+        } => {
+            if let Some(email) = email {
+                eprintln!(
+                    "Imported Grok Build session ({scopes} scope(s)) as {email}\n  from {}",
+                    source.display()
+                );
+            } else {
+                eprintln!(
+                    "Imported Grok Build session ({scopes} scope(s))\n  from {}",
+                    source.display()
+                );
+            }
+            eprintln!("Logan will use this account for default xAI models.");
+            eprintln!(
+                "Custom models with api_key/env_key still use their own keys (see docs/SETUP.md)."
+            );
+            Ok(())
+        }
+        ImportGrokAuthResult::Skipped {
+            reason: ImportSkipReason::SourceMissing,
+        } => anyhow::bail!(
+            "No Grok Build credentials found.\n  Expected: ~/.grok/auth.json (or $GROK_BUILD_HOME/auth.json)\n  Fix: run `grok login` first, or `logan login` for a browser sign-in."
+        ),
+        ImportGrokAuthResult::Skipped {
+            reason: ImportSkipReason::SourceHasNoUsableSession,
+        } => anyhow::bail!(
+            "Grok Build auth.json has no importable OIDC session.\n  Fix: run `grok login`, then `logan login --from-grok`."
+        ),
+        ImportGrokAuthResult::Skipped { reason } => anyhow::bail!(
+            "Could not import Grok Build credentials ({})",
+            reason.as_str()
+        ),
+    }
 }
 
 /// Result of a logout operation. Used by both the CLI subcommand and
@@ -997,6 +1072,9 @@ pub fn perform_logout(
         // Clear the synced files if no principal remains to own them. A scoped
         // logout that leaves a team (or a deployment key) signed in keeps them.
         crate::managed_config::clear_orphan();
+        // Prevent auto-import from immediately re-seeding ~/.grok credentials
+        // after an intentional logout.
+        let _ = crate::auth::import_grok::write_no_import_sentinel(&grok_home::grok_home());
     }
     Ok(LogoutResult {
         was_logged_in,
@@ -1027,6 +1105,9 @@ pub fn run_cli_logout(config: &crate::agent::config::Config) -> anyhow::Result<(
     if result.api_key_still_set {
         eprintln!("XAI_API_KEY is still set and will be used for authentication.");
     }
+    eprintln!(
+        "Auto-import from Grok Build is paused until you run `logan login` or `logan login --from-grok`."
+    );
     Ok(())
 }
 

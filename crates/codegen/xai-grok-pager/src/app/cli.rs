@@ -23,15 +23,26 @@ pub enum Command {
         #[arg(long, hide = true)]
         legacy: bool,
         /// Use Grok OAuth via auth.x.ai.
-        #[arg(long = "oauth", alias = "oidc", conflicts_with_all = ["device_auth"])]
+        #[arg(
+            long = "oauth",
+            alias = "oidc",
+            conflicts_with_all = ["device_auth", "from_grok"]
+        )]
         oauth: bool,
         /// Use device-code authentication for headless/remote environments.
         #[arg(
             long = "device-auth",
             visible_alias = "device-code",
-            conflicts_with_all = ["oauth"]
+            conflicts_with_all = ["oauth", "from_grok"]
         )]
         device_auth: bool,
+        /// Copy a Grok Build account session from ~/.grok/auth.json (no browser).
+        ///
+        /// Use this when you already signed into Grok Build with your xAI user
+        /// account and want Logan to reuse that session for default xAI models.
+        /// Does not override custom models that set api_key/env_key.
+        #[arg(long = "from-grok", conflicts_with_all = ["oauth", "device_auth"])]
+        from_grok: bool,
         /// Authenticate for remote development environments (hidden).
         ///
         /// Field is always present so match arms stay feature-unification-safe
