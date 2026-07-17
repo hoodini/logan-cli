@@ -24,6 +24,7 @@ token visibility, auto-routing, goals, observability, and remote-agent use.
 | **Memory / self-improve** | **Yes (Logan)** | Memory + dream + skills + auto-reflect hooks |
 | **Smart auto model routing** | **`--route auto` shipped** | Heuristic classifier → `tier-*` before sample; skill still available |
 | **`/stats`** | **Shipped** | **Colorful** session ledger: IN/OUT/CACHE/REASON/$ by model (bold, high contrast) |
+| **`/update`** | **Shipped** | Background update from GitHub main or release channel · `/update check|status` |
 | **Opt-in skills** | **Shipped** | Empty `~/.logan/skills/` by default · `/skills add|remove|catalog` |
 | **`/caveman` · `/ponytail` · `/think`** | **Shipped** | Modes off by default · require installed skill |
 | **`/modes` · `/creative`** | **Shipped** | Status + creative map (shows installed vs catalog) |

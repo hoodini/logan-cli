@@ -63,6 +63,9 @@ Session / Grok import is for default xAI models. See [docs/SETUP.md](docs/SETUP.
 | `/skills add pack modes` | Opt-in: caveman, think, ponytail, whoami, self-improve |
 | `/skills add pack creative` | Opt-in: HyperFrames, scrub landings, reels |
 | `/skills remove <name>` | Drop a skill you no longer want |
+| `/update` | Pull latest from GitHub main (background) - then restart |
+| `/update check` | Check release channel without installing |
+| `/update status` | Tail last update log |
 
 Bottom bar after each reply:
 
@@ -190,6 +193,34 @@ Full write-up: **[docs/SWOT.md](docs/SWOT.md)**
 
 We do **not** claim Copilot/Cursor IDE parity.  
 We claim: **never fly blind on tokens**, **install in one paste**, **you own the skill set**, **stay open**.
+
+---
+
+## Update Logan
+
+**Inside the TUI (every time):**
+
+```text
+/update              # GitHub main via install script (background)
+/update status       # watch log
+/update check        # release channel only
+/update release      # published releases (logan update)
+```
+
+When the log shows `finished exit=0`, quit and start again:
+
+```bash
+logan --version
+logan
+```
+
+**Outside the TUI:**
+
+```bash
+logan update                 # release channel
+# or rebuild from source install:
+curl -fsSL https://raw.githubusercontent.com/hoodini/logan-cli/main/scripts/install-logan.sh | LOGAN_INSTALL_NO_START=1 bash
+```
 
 ---
 

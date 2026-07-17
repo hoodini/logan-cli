@@ -62,6 +62,7 @@ pub mod theme;
 pub mod timestamps;
 pub mod toggle_mouse_reporting;
 pub mod transcript;
+pub mod update_cmd;
 pub mod usage;
 pub mod view_plan;
 pub mod vim_mode;
@@ -131,6 +132,7 @@ pub fn builtin_commands() -> Vec<Arc<dyn SlashCommand>> {
         Arc::new(rewind::RewindCommand),
         Arc::new(login::LoginCommand),
         Arc::new(logout::LogoutCommand),
+        Arc::new(update_cmd::UpdateCommand),
         Arc::new(import_claude::ImportClaudeCommand),
         Arc::new(usage::UsageCommand),
         Arc::new(queue::QueueCommand),
