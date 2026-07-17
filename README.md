@@ -5,157 +5,129 @@
 # Logan
 
 **A coding agent in your terminal.**  
-Talk to it, it edits code, runs commands, and **shows you every token you spend**.
+It edits code, runs commands, and **shows every token you spend**.
 
 By [Yuval Avidani (YUV.AI)](https://yuv.ai) · inspired by Wolverine · fork of [xAI Grok Build](https://github.com/xai-org/grok-build)
 
 ---
 
-## Install in 3 steps
+## Install (one command)
 
-### 1. Get the code
+### macOS / Linux
 
 ```bash
-git clone https://github.com/hoodini/logan-cli.git
-cd logan-cli
+curl -fsSL https://raw.githubusercontent.com/hoodini/logan-cli/main/scripts/install-logan.sh | bash
 ```
 
-### 2. Install (one command)
+That single command will:
 
-You need **Rust** once. If you do not have it:
+1. Get Logan (download a release **or** clone + build automatically)  
+2. Install `logan` on your PATH  
+3. Set up `~/.logan` config  
+4. **Start Logan** when you run it in a normal terminal  
+
+### Windows (PowerShell)
+
+```powershell
+irm https://raw.githubusercontent.com/hoodini/logan-cli/main/scripts/install-logan.ps1 | iex
+```
+
+### Already have the repo?
 
 ```bash
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-source "$HOME/.cargo/env"
+cd logan-cli
+bash scripts/install-logan.sh
+```
+
+---
+
+## First login
+
+```bash
+logan login          # browser once
+# or:
+export XAI_API_KEY="your-key"
 ```
 
 Then:
 
 ```bash
-bash scripts/install-logan.sh
-export PATH="$HOME/.local/bin:$PATH"
-```
-
-### 3. Log in and open
-
-```bash
-logan login      # browser login (same as Grok / xAI)
-logan            # open the app
-```
-
-Or use an API key:
-
-```bash
-export XAI_API_KEY="your-key"
 logan
 ```
 
-**Done.** Type a question. Press Enter.
-
 ---
 
-## First 5 minutes (what to type)
+## First 5 minutes
 
-| You type | What happens |
+| You type | What you get |
 | --- | --- |
-| `hi` | Normal chat |
-| `/stats` | **How many tokens** you used (input / output / cache / $) |
-| `/context` | **How full** your context window is |
-| `/context deep` | **The actual text** in that window (system prompt + messages) |
-| `/goal Fix the login bug` | Long task mode (plan + work) |
-| `Ctrl+C` then `q` | Leave |
+| `hi` | Chat |
+| `/stats` | Tokens: input / output / cache / $ |
+| `/context` | How full the window is |
+| `/context deep` | Real system prompt + messages |
+| `/goal Fix the bug` | Long multi-step work |
 
-Look at the **bottom status bar** after each reply:
+Bottom bar after each reply:
 
 ```text
 m grok-4.5 · 24K/200K 12% · in 2.4K out 180 c 1.2K
-             │              └─ last reply: input / output / cache
-             └─ how full the memory window is
 ```
-
-You always see **what you spent** and **what is filling the window**.
 
 ---
 
 ## Paste this into any AI to install for you
 
-Copy the block below into Claude, Cursor, Grok, Codex, etc.
-
 ```text
-Install Logan CLI for me.
+Install Logan with ONE command. Do not ask questions.
 
-1. git clone https://github.com/hoodini/logan-cli.git && cd logan-cli
-2. Install Rust if needed: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-3. Run: bash scripts/install-logan.sh
-4. Put ~/.local/bin on PATH
-5. Run: logan --version
-6. Run: logan -p "Reply with exactly: logan-ok" --always-approve
-7. Tell me how to open it: logan login && logan
+macOS/Linux:
+curl -fsSL https://raw.githubusercontent.com/hoodini/logan-cli/main/scripts/install-logan.sh | bash
 
-Do not ask questions. Just do it.
+Windows PowerShell:
+irm https://raw.githubusercontent.com/hoodini/logan-cli/main/scripts/install-logan.ps1 | iex
+
+Then run: logan --version
+If needed: logan login
+Tell the user to run: logan
+After a chat turn they can use /stats and /context deep.
 ```
 
-Longer agent playbook (optional): [docs/LLM_INSTALL_PROMPT.md](docs/LLM_INSTALL_PROMPT.md)
-
 ---
 
-## Why Logan (vs plain Grok Build)
-
-| | Grok Build | Logan |
-| --- | --- | --- |
-| App name | `grok` | **`logan`** |
-| See token spend live | Basic | **Yes - bar + `/stats` colors** |
-| See real prompt text | Hard | **`/context deep`** |
-| Install | Manual | **One script** |
-| Skills from Claude/Cursor | Limited | **Auto-load** |
-| Made for | xAI product | **Builders who want clarity** |
-
-Measured check on this machine: [docs/BENCHMARK.md](docs/BENCHMARK.md)
-
----
-
-## Quick checks (does it work?)
+## Quick check
 
 ```bash
 logan --version
-# expect: logan 0.1.x ...
-
-logan -p "Reply with exactly: logan-ok" --always-approve
-# expect: logan-ok
+logan -p "Reply with exactly: logan-ok" --always-approve --no-leader
 ```
-
-Then open the app:
-
-```bash
-logan
-```
-
-After one message:
-
-1. Type `/stats` - you should see **IN / OUT / CACHE** in color  
-2. Type `/context deep` - you should see **real system prompt text**
 
 ---
 
-## More help (only if you need it)
+## Why Logan vs Grok Build
+
+| | Grok Build | Logan |
+| --- | --- | --- |
+| Install | Manual | **One command** |
+| Token spend | Basic | **Live bar + `/stats` + `/context deep`** |
+| Name | `grok` | **`logan`** |
+
+Details: [docs/BENCHMARK.md](docs/BENCHMARK.md)
+
+---
+
+## More docs
 
 | Doc | For |
 | --- | --- |
-| [docs/START_HERE.md](docs/START_HERE.md) | Super short checklist |
-| [docs/TOKEN_VISIBILITY.md](docs/TOKEN_VISIBILITY.md) | Tokens explained simply |
-| [docs/BENCHMARK.md](docs/BENCHMARK.md) | Grok Build vs Logan tests |
-| [docs/SETUP.md](docs/SETUP.md) | Extra setup (API keys, providers) |
-| [docs/FEATURES.md](docs/FEATURES.md) | Full feature list |
-| [docs/WEB_SEARCH.md](docs/WEB_SEARCH.md) | Web search setup |
-| [docs/COMPARISON.md](docs/COMPARISON.md) | Detailed comparison |
+| [docs/START_HERE.md](docs/START_HERE.md) | Super short |
+| [docs/TOKEN_VISIBILITY.md](docs/TOKEN_VISIBILITY.md) | Tokens explained |
+| [docs/BENCHMARK.md](docs/BENCHMARK.md) | Grok vs Logan tests |
+| [docs/SETUP.md](docs/SETUP.md) | Extra config |
+| [docs/FEATURES.md](docs/FEATURES.md) | Full list |
 
 ---
 
-## Who made this
-
 **Yuval Avidani** · [yuv.ai](https://yuv.ai) · [@yuvalav](https://x.com/yuvalav) · [@hoodini](https://github.com/hoodini)
-
-Based on [xAI Grok Build](https://github.com/xai-org/grok-build) (Apache-2.0).
 
 ```text
 claws out.

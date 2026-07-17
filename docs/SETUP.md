@@ -4,11 +4,14 @@ For humans **and** for coding agents / LLMs installing Logan on a machine.
 
 **Author:** Yuval Avidani (YUV.AI) - https://yuv.ai · GitHub [@hoodini](https://github.com/hoodini)
 
-> **New here?** Read the main **[README](../README.md)** first (3 steps).  
-> Super short: **[START_HERE.md](START_HERE.md)** ·  
-> AI paste: **[LLM_INSTALL_PROMPT.md](LLM_INSTALL_PROMPT.md)** ·  
-> Tokens: **[TOKEN_VISIBILITY.md](TOKEN_VISIBILITY.md)** ·  
-> Benchmark: **[BENCHMARK.md](BENCHMARK.md)**
+> **New here?** One command:
+>
+> ```bash
+> curl -fsSL https://raw.githubusercontent.com/hoodini/logan-cli/main/scripts/install-logan.sh | bash
+> ```
+>
+> Windows: `irm https://raw.githubusercontent.com/hoodini/logan-cli/main/scripts/install-logan.ps1 | iex`  
+> Super short: **[START_HERE.md](START_HERE.md)** · Tokens: **[TOKEN_VISIBILITY.md](TOKEN_VISIBILITY.md)**
 
 ---
 

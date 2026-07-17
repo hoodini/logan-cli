@@ -1,27 +1,16 @@
-# Paste this into any AI helper
-
-Copy **everything** in the box. Paste into Claude / Cursor / Grok / Codex / ChatGPT.
+# Paste into any AI
 
 ```text
-Install Logan CLI on this machine. Do not ask me questions.
+Install Logan with ONE command. Do not ask questions.
 
-Steps:
-1. If folder logan-cli is missing:
-   git clone https://github.com/hoodini/logan-cli.git
-   cd logan-cli
-2. If rustc is missing, install rustup and source cargo env.
-3. Run: bash scripts/install-logan.sh
-4. export PATH="$HOME/.local/bin:$PATH"
-5. Copy binary also to ~/.logan/bin/logan if the script did not.
-6. Test:
-   logan --version
-   logan -p "Reply with exactly: logan-ok" --always-approve
-7. Tell the user:
-   logan login
-   logan
-   Then after a chat turn use: /stats   and   /context deep
+macOS/Linux:
+curl -fsSL https://raw.githubusercontent.com/hoodini/logan-cli/main/scripts/install-logan.sh | bash
 
-Success = logan on PATH, version prints, headless reply contains logan-ok.
+Windows PowerShell:
+irm https://raw.githubusercontent.com/hoodini/logan-cli/main/scripts/install-logan.ps1 | iex
+
+Then:
+logan --version
+logan login   # if needed
+Tell the user: run `logan`, then after a turn use /stats and /context deep.
 ```
-
-That is the whole install prompt. Nothing else required.

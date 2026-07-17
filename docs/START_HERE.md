@@ -1,47 +1,33 @@
-# Start here (simple)
+# Start here
 
-## Install
+## Install (one command)
+
+**macOS / Linux**
 
 ```bash
-git clone https://github.com/hoodini/logan-cli.git
-cd logan-cli
-bash scripts/install-logan.sh
-export PATH="$HOME/.local/bin:$PATH"
+curl -fsSL https://raw.githubusercontent.com/hoodini/logan-cli/main/scripts/install-logan.sh | bash
 ```
 
-## Log in
+**Windows (PowerShell)**
+
+```powershell
+irm https://raw.githubusercontent.com/hoodini/logan-cli/main/scripts/install-logan.ps1 | iex
+```
+
+## Login + open
 
 ```bash
 logan login
-```
-
-(or `export XAI_API_KEY=...`)
-
-## Open
-
-```bash
 logan
 ```
 
 ## After you chat once
 
-| Type this | You see |
+| Type | See |
 | --- | --- |
-| `/stats` | Tokens: input, output, cache, cost |
-| `/context` | How full the window is |
-| `/context deep` | The real text inside the window |
-| `/goal Fix X` | Long multi-step task |
+| `/stats` | Token bill |
+| `/context deep` | Real prompt text |
 
-Status bar (bottom) always shows last spend: `in … out … c …`
+## AI paste
 
-## Test without the UI
-
-```bash
-logan -p "Reply with exactly: logan-ok" --always-approve
-```
-
-## More
-
-- Tokens: [TOKEN_VISIBILITY.md](TOKEN_VISIBILITY.md)  
-- Grok vs Logan tests: [BENCHMARK.md](BENCHMARK.md)  
-- Ask an AI to install: [LLM_INSTALL_PROMPT.md](LLM_INSTALL_PROMPT.md)  
+See [LLM_INSTALL_PROMPT.md](LLM_INSTALL_PROMPT.md)
