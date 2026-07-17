@@ -1,7 +1,7 @@
 # Benchmark: Grok Build vs Logan
 
 **Author:** Yuval Avidani (YUV.AI)  
-**Last run:** 2026-07-17 (this machine)
+**Last run:** 2026-07-17 (re-verified on this machine after install)
 
 Simple question: **what does Logan add that Grok Build does not?**
 
@@ -17,7 +17,7 @@ bash scripts/feature-check.sh
 
 | App | Version | Binary |
 | --- | --- | --- |
-| **Logan** | `logan 0.1.220-alpha.4 (afe5061)` | `~/.local/bin/logan` (~151 MB) |
+| **Logan** | `logan 0.1.220-alpha.4 (afa121d)` | `~/.local/bin/logan` (~151 MB) |
 | **Grok Build** | `grok 0.2.101 (stable)` | `~/.local/bin/grok` → official install |
 
 Different codebases - fair feature comparison, not a micro-CPU race.
@@ -56,7 +56,7 @@ Grok:   /stats OK · Token stats MISS · context deep MISS · Deep dive MISS · 
 
 | CLI | Prompt | Result | Wall time |
 | --- | --- | --- | --- |
-| logan | `Reply with exactly: logan-ok` | `logan-ok` | **~4.3 s** |
+| logan | `Reply with exactly: logan-ok` | `logan-ok` | **~5.0 s** |
 | grok | `Reply with exactly: grok-ok` | `grok-ok` | **~3.9 s** |
 
 **Takeaway:** same speed class for a tiny chat. Logan’s win is **visibility and product features**, not raw tokens/second.

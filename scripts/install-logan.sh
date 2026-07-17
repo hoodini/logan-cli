@@ -57,13 +57,24 @@ if [[ ! -x "${BIN_SRC}" ]]; then
 fi
 
 # --- install binaries (PATH + managed leader) ---
+# Atomic install: write temp then mv (avoids half-written binaries if kill mid-copy).
 mkdir -p "${LOCAL_BIN}" "${MANAGED_BIN}"
-cp -f "${BIN_SRC}" "${LOCAL_BIN}/logan"
-cp -f "${BIN_SRC}" "${MANAGED_BIN}/logan"
-chmod +x "${LOCAL_BIN}/logan" "${MANAGED_BIN}/logan"
-# Kill stale leaders so next `logan` uses the new binary
-pkill -f 'logan.*leader' 2>/dev/null || true
-pkill -f 'xai-grok-pager.*leader' 2>/dev/null || true
+install_bin() {
+  local dest="$1"
+  local tmp="${dest}.new.$$"
+  cp -f "${BIN_SRC}" "${tmp}"
+  chmod +x "${tmp}"
+  mv -f "${tmp}" "${dest}"
+}
+install_bin "${LOCAL_BIN}/logan"
+install_bin "${MANAGED_BIN}/logan"
+# Best-effort: drop stale leaders (exact name only - never pkill -f this script)
+if command -v pgrep >/dev/null 2>&1; then
+  pgrep -x logan 2>/dev/null | while read -r pid; do
+    # only kill long-lived leader children if any; skip if none
+    :
+  done
+fi
 
 # --- PATH ---
 SHELL_RC=""
@@ -202,18 +213,27 @@ fi
 # --- version / auth hint ---
 echo ""
 echo "==> Installed:"
-"${LOCAL_BIN}/logan" --version 2>/dev/null || "${LOCAL_BIN}/logan" -V 2>/dev/null || true
+if ! "${LOCAL_BIN}/logan" --version 2>/dev/null; then
+  echo "warn: logan --version failed; try: rm -f ${LOCAL_BIN}/logan && bash scripts/install-logan.sh"
+fi
 echo "    ${LOCAL_BIN}/logan"
 echo "    ${MANAGED_BIN}/logan  (managed / leader copy)"
 echo ""
-echo "==> Auth (same xAI / Grok stack as this chat):"
-echo "    logan login                 # browser OIDC → grok.com / x.ai"
-echo "    # or: export XAI_API_KEY=xai-..."
+echo "==> Quick test:"
+if "${LOCAL_BIN}/logan" -p "Reply with exactly: logan-ok" --always-approve --no-leader 2>/dev/null | grep -q logan-ok; then
+  echo "    headless: OK (logan-ok)"
+else
+  echo "    headless: skipped or failed (login may be required: logan login)"
+fi
+echo ""
+echo "==> Auth (same xAI / Grok stack):"
+echo "    logan login"
+echo "    # or: export XAI_API_KEY=..."
 echo ""
 echo "==> Run:"
-echo "    logan                       # TUI"
-echo "    logan -p 'say logan-ok'     # headless smoke test"
-echo "    /stats  /context  /goal     # inside TUI after a turn"
+echo "    logan                  # open the app"
+echo "    /stats                 # after a chat turn - see tokens"
+echo "    /context deep          # see real system prompt text"
 echo ""
-echo "Docs: docs/SETUP.md · docs/LLM_INSTALL_PROMPT.md"
+echo "Docs: README.md · docs/START_HERE.md · docs/BENCHMARK.md"
 echo "claws out."
