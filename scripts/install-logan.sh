@@ -380,46 +380,64 @@ TOML
     fi
   fi
 
-  # Sync skills from sibling agent homes (missing only)
-  sync_skills() {
-    local src="$1"
-    [[ -d "${src}" ]] || return 0
-    local n=0 d name dest
-    for d in "${src}"/*; do
-      [[ -d "${d}" ]] || continue
-      name="$(basename "${d}")"
-      dest="${LOGAN_HOME}/skills/${name}"
-      if [[ ! -e "${dest}" ]]; then
-        cp -R "${d}" "${dest}"
-        n=$((n + 1))
-      fi
-    done
-    if [[ "${n}" -gt 0 ]]; then
-      log "Synced ${n} skills from ${src}"
-    fi
-    return 0
-  }
-  sync_skills "${HOME}/.grok/skills" || true
-  sync_skills "${HOME}/.claude/skills" || true
-  sync_skills "${HOME}/.agents/skills" || true
-  # Native Logan skills from this repo (always refresh known names)
+  # Skills are OPT-IN. Active skills dir starts empty.
+  # Catalog = library you can install from (`/skills add …`).
+  mkdir -p "${LOGAN_HOME}/skills" "${LOGAN_HOME}/catalog/skills"
   if [[ -n "${REPO_ROOT:-}" && -d "${REPO_ROOT}/skills" ]]; then
     for d in "${REPO_ROOT}/skills"/*; do
       [[ -d "${d}" ]] || continue
       name="$(basename "${d}")"
-      dest="${LOGAN_HOME}/skills/${name}"
+      dest="${LOGAN_HOME}/catalog/skills/${name}"
       mkdir -p "${dest}"
       cp -R "${d}/." "${dest}/"
     done
-    log "Seeded native skills from ${REPO_ROOT}/skills"
+    log "Catalog refreshed at ${LOGAN_HOME}/catalog/skills (not auto-enabled)"
+  fi
+  # Optional: LOGAN_SEED_SKILLS=1 installs everything into active skills (power users)
+  if [[ "${LOGAN_SEED_SKILLS:-}" == "1" || "${LOGAN_SEED_SKILLS:-}" == "true" ]]; then
+    if [[ -d "${LOGAN_HOME}/catalog/skills" ]]; then
+      for d in "${LOGAN_HOME}/catalog/skills"/*; do
+        [[ -d "${d}" ]] || continue
+        name="$(basename "${d}")"
+        dest="${LOGAN_HOME}/skills/${name}"
+        mkdir -p "${dest}"
+        cp -R "${d}/." "${dest}/"
+      done
+      log "LOGAN_SEED_SKILLS=1 → installed all catalog skills into ${LOGAN_HOME}/skills"
+    fi
+  else
+    log "Active skills stay empty by default. In Logan: /skills catalog · /skills add pack creative"
+  fi
+  # Optional sibling sync (opt-in only)
+  if [[ "${LOGAN_SYNC_SIBLING_SKILLS:-}" == "1" || "${LOGAN_SYNC_SIBLING_SKILLS:-}" == "true" ]]; then
+    sync_skills() {
+      local src="$1"
+      [[ -d "${src}" ]] || return 0
+      local n=0 d name dest
+      for d in "${src}"/*; do
+        [[ -d "${d}" ]] || continue
+        name="$(basename "${d}")"
+        dest="${LOGAN_HOME}/skills/${name}"
+        if [[ ! -e "${dest}" ]]; then
+          cp -R "${d}" "${dest}"
+          n=$((n + 1))
+        fi
+      done
+      if [[ "${n}" -gt 0 ]]; then
+        log "Synced ${n} skills from ${src}"
+      fi
+      return 0
+    }
+    sync_skills "${HOME}/.grok/skills" || true
+    sync_skills "${HOME}/.claude/skills" || true
+    sync_skills "${HOME}/.agents/skills" || true
   fi
 
   mkdir -p "${LOGAN_HOME}/rules" "${LOGAN_HOME}/memory"
   if [[ ! -f "${LOGAN_HOME}/modes.toml" ]]; then
     cat > "${LOGAN_HOME}/modes.toml" <<'TOML'
-# Logan communication / coding modes
-# Toggle: /caveman /ponytail /think /modes
-# caveman and think are exclusive
+# Logan modes - all OFF by default. Opt-in with /caveman /ponytail /think
+# Requires skills installed first: /skills add pack modes
 [modes]
 caveman = "off"
 ponytail = "off"
@@ -428,58 +446,27 @@ TOML
   fi
   if [[ ! -f "${LOGAN_HOME}/rules/logan-modes.md" ]]; then
     cat > "${LOGAN_HOME}/rules/logan-modes.md" <<'MD'
-# Logan active modes (seed)
+# Logan active modes (default empty)
 
-Caveman: OFF · Ponytail: OFF · Think: OFF
+All modes OFF. No creative stack forced.
 
-Use `/caveman full` for terse talk (save tokens).
-Use `/think full` for deep explain (yuvai-thinking) - exclusive with caveman.
-Use `/ponytail full` for YAGNI / minimal code.
-Use `/site mouse video.mp4` for cinematic scrub landings.
-Use `/reel video.mp4` for captioned HyperFrames reels.
-Use `/creative` for the full stack map.
-Use `/whoami grill` for identity + stack memory.
-Use `/improve` for self-heal visibility.
-HyperFrames is the default video stack (`hyperframes-master` skill).
+Optional (you choose):
+- `/skills catalog` - see available skills
+- `/skills add pack modes` - caveman / ponytail / yuvai-thinking
+- `/skills add pack creative` - HyperFrames + scrub landings + reels
+- `/think full` - only after yuvai-thinking is installed
+- `/caveman full` - only after caveman is installed
 MD
   fi
-  if [[ ! -f "${LOGAN_HOME}/memory/PROFILE.md" ]]; then
-    if [[ -n "${REPO_ROOT:-}" && -f "${REPO_ROOT}/examples/config/PROFILE.template.md" ]]; then
-      cp -f "${REPO_ROOT}/examples/config/PROFILE.template.md" "${LOGAN_HOME}/memory/PROFILE.md"
-    else
-      cat > "${LOGAN_HOME}/memory/PROFILE.md" <<'MD'
-# PROFILE
-
-## Identity
-- Name:
-- Brand:
-
-## Links
-- Web:
-- GitHub:
-- X:
-
-## Tech stack defaults
-- Frontend:
-- Motion:
-- Video: HyperFrames (default)
-
-## Taste
-
-## Ongoing notes
-MD
-    fi
-  fi
+  # Do NOT seed PROFILE/MEMORY with personal templates by default.
+  # Templates live in the repo under examples/config/ for copy-on-demand.
   if [[ ! -f "${LOGAN_HOME}/memory/IMPROVEMENTS.md" ]]; then
     cat > "${LOGAN_HOME}/memory/IMPROVEMENTS.md" <<'MD'
 # IMPROVEMENTS
 
-Structured self-heal / self-improve journal. Append via `/improve` or hooks.
+Optional self-improve journal. Use `/improve` after you install self-improve skill if you want.
 
 MD
-  fi
-  if [[ ! -f "${LOGAN_HOME}/memory/MEMORY.md" && -n "${REPO_ROOT:-}" && -f "${REPO_ROOT}/examples/config/USER_PREFERENCES.template.md" ]]; then
-    cp -f "${REPO_ROOT}/examples/config/USER_PREFERENCES.template.md" "${LOGAN_HOME}/memory/MEMORY.md"
   fi
 
   if [[ -n "${REPO_ROOT:-}" && -f "${REPO_ROOT}/examples/hooks/auto-reflect.json" ]]; then

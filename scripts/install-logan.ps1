@@ -260,27 +260,42 @@ yolo = false
   }
 
   Ensure-Dir (Join-Path $LoganHome "rules")
+  Ensure-Dir (Join-Path $LoganHome "skills")
+  Ensure-Dir (Join-Path $LoganHome "catalog\skills")
   $modes = Join-Path $LoganHome "modes.toml"
   if (-not (Test-Path $modes)) {
     @"
+# All OFF by default. Opt-in: /skills add pack modes then /think or /caveman
 [modes]
 caveman = "off"
 ponytail = "off"
+think = "off"
 "@ | Set-Content -Path $modes -Encoding UTF8
   }
   $impr = Join-Path $LoganHome "memory\IMPROVEMENTS.md"
   if (-not (Test-Path $impr)) {
     "# IMPROVEMENTS`n" | Set-Content -Path $impr -Encoding UTF8
   }
-  # Native skills from repo when InstallDir known
+  # Catalog only (not active). User: /skills add …
   if ($script:LoganInstallDir -and (Test-Path (Join-Path $script:LoganInstallDir "skills"))) {
     $srcSkills = Join-Path $script:LoganInstallDir "skills"
     Get-ChildItem -Directory $srcSkills | ForEach-Object {
-      $dest = Join-Path $LoganHome "skills\$($_.Name)"
+      $dest = Join-Path $LoganHome "catalog\skills\$($_.Name)"
       Ensure-Dir $dest
       Copy-Item -Path (Join-Path $_.FullName "*") -Destination $dest -Recurse -Force
     }
-    Write-Log "Seeded native skills from $srcSkills"
+    Write-Log "Catalog refreshed (skills not auto-enabled). In Logan: /skills catalog"
+  }
+  if ($env:LOGAN_SEED_SKILLS -eq "1" -or $env:LOGAN_SEED_SKILLS -eq "true") {
+    $cat = Join-Path $LoganHome "catalog\skills"
+    if (Test-Path $cat) {
+      Get-ChildItem -Directory $cat | ForEach-Object {
+        $dest = Join-Path $LoganHome "skills\$($_.Name)"
+        Ensure-Dir $dest
+        Copy-Item -Path (Join-Path $_.FullName "*") -Destination $dest -Recurse -Force
+      }
+      Write-Log "LOGAN_SEED_SKILLS=1 → installed catalog into active skills"
+    }
   }
 }
 

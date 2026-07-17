@@ -37,6 +37,131 @@ fn memory_dir() -> PathBuf {
     logan_home().join("memory")
 }
 
+fn skills_dir() -> PathBuf {
+    logan_home().join("skills")
+}
+
+/// Optional library of skills the user can install. Never auto-activated.
+fn catalog_dir() -> PathBuf {
+    if let Ok(v) = std::env::var("LOGAN_SKILL_CATALOG") {
+        let p = PathBuf::from(v);
+        if !p.as_os_str().is_empty() {
+            return p;
+        }
+    }
+    logan_home().join("catalog").join("skills")
+}
+
+fn skill_installed(name: &str) -> bool {
+    skills_dir().join(name).join("SKILL.md").is_file()
+}
+
+fn list_skill_names(dir: &Path) -> Vec<String> {
+    let mut names = Vec::new();
+    let Ok(rd) = std::fs::read_dir(dir) else {
+        return names;
+    };
+    for ent in rd.flatten() {
+        let p = ent.path();
+        if p.is_dir() && p.join("SKILL.md").is_file() {
+            if let Some(n) = p.file_name().and_then(|s| s.to_str()) {
+                names.push(n.to_string());
+            }
+        }
+    }
+    names.sort();
+    names
+}
+
+fn copy_dir_recursive(src: &Path, dest: &Path) -> std::io::Result<()> {
+    std::fs::create_dir_all(dest)?;
+    for ent in std::fs::read_dir(src)? {
+        let ent = ent?;
+        let from = ent.path();
+        let to = dest.join(ent.file_name());
+        if from.is_dir() {
+            copy_dir_recursive(&from, &to)?;
+        } else {
+            std::fs::copy(&from, &to)?;
+        }
+    }
+    Ok(())
+}
+
+fn add_skill_from_catalog(name: &str) -> Result<String, String> {
+    let name = name.trim();
+    if name.is_empty() || name.contains('/') || name.contains("..") {
+        return Err("Invalid skill name".into());
+    }
+    let src = catalog_dir().join(name);
+    if !src.join("SKILL.md").is_file() {
+        return Err(format!(
+            "Skill `{name}` not in catalog at {}.\n\
+             Install catalog: re-run install, or set LOGAN_SKILL_CATALOG, or copy skills into ~/.logan/catalog/skills/\n\
+             List catalog: `/skills catalog`",
+            catalog_dir().display()
+        ));
+    }
+    let dest = skills_dir().join(name);
+    if dest.exists() {
+        // Refresh in place
+        let _ = std::fs::remove_dir_all(&dest);
+    }
+    copy_dir_recursive(&src, &dest).map_err(|e| e.to_string())?;
+    Ok(format!(
+        "Installed skill `{name}` → {}\nEnable related mode if needed: `/think` `/caveman` `/ponytail` or invoke the skill by name.",
+        dest.display()
+    ))
+}
+
+fn remove_skill(name: &str) -> Result<String, String> {
+    let name = name.trim();
+    if name.is_empty() || name.contains('/') || name.contains("..") {
+        return Err("Invalid skill name".into());
+    }
+    let dest = skills_dir().join(name);
+    if !dest.exists() {
+        return Err(format!("Skill `{name}` is not installed under {}", skills_dir().display()));
+    }
+    std::fs::remove_dir_all(&dest).map_err(|e| e.to_string())?;
+    // If a mode depended on this skill, turn it off.
+    let mut state = load_modes();
+    let mut flipped = Vec::new();
+    if name == "caveman" && state.caveman != Intensity::Off {
+        state.caveman = Intensity::Off;
+        flipped.push("caveman");
+    }
+    if name == "ponytail" && state.ponytail != Intensity::Off {
+        state.ponytail = Intensity::Off;
+        flipped.push("ponytail");
+    }
+    if name == "yuvai-thinking" && state.think != Intensity::Off {
+        state.think = Intensity::Off;
+        flipped.push("think");
+    }
+    if !flipped.is_empty() {
+        let _ = save_modes(&state);
+    }
+    let extra = if flipped.is_empty() {
+        String::new()
+    } else {
+        format!(" Also turned off modes: {}.", flipped.join(", "))
+    };
+    Ok(format!("Removed skill `{name}`.{extra}"))
+}
+
+fn ensure_skill_or_hint(name: &str) -> Result<(), String> {
+    if skill_installed(name) {
+        return Ok(());
+    }
+    Err(format!(
+        "Skill `{name}` is not installed (Logan starts with an empty skill set).\n\
+         Add it: `/skills add {name}`\n\
+         Or pack: `/skills add pack creative` · `/skills add pack modes`\n\
+         Catalog: `/skills catalog`"
+    ))
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Intensity {
     Off,
@@ -191,15 +316,31 @@ Generated for every session as a global rule under `~/.logan/rules/`.
             ));
         }
     }
+    // Only mention optional skills when the user has installed them.
+    let installed = list_skill_names(&skills_dir());
+    if installed.is_empty() {
+        body.push_str(
+            "## Skills\n\
+             No user skills installed (default empty). User can add with `/skills add <name>` \
+             or `/skills add pack creative`.\n\n",
+        );
+    } else {
+        body.push_str("## Installed skills (user chose these)\n");
+        for n in &installed {
+            body.push_str(&format!("- `{n}`\n"));
+        }
+        body.push('\n');
+        if installed.iter().any(|s| s.contains("hyperframes") || s == "video-edit") {
+            body.push_str(
+                "When video/motion work is requested and HyperFrames skills are installed, prefer them.\n\n",
+            );
+        }
+    }
     body.push_str(
-        "## Always (creative stack)\n\
-         - **HyperFrames** is the default video engine (skill `hyperframes-master` + hyperframes/*).\n\
-         - **Landings from video**: prefer `cinematic-scrub-landing` (mouse scrub) or `parallax-landing-page` (scroll scrub) or `video-to-landing-page` (Apple sticky scroll).\n\
-         - **Captioned reels**: `video-edit` (transcript review before render, HE/EN).\n\
-         - Route ambiguous creative work via `yuv-pilot`.\n\
-         - PROFILE.md + MEMORY.md for identity/stack (`/whoami`).\n\
-         - Journal non-trivial fixes in IMPROVEMENTS.md (`/improve`).\n\
-         - Shortcuts: `/site <video>` · `/reel <video>` · `/creative` · `/think` · `/caveman`.\n",
+        "## Notes\n\
+         - Modes above are sticky only while ON. Off = normal Logan behavior.\n\
+         - User owns `~/.logan/skills/` - add/remove anytime via `/skills`.\n\
+         - Profile/memory files are optional (`/whoami`, `/improve`).\n",
     );
     std::fs::write(rules_path(), body).map_err(|e| e.to_string())
 }
@@ -250,6 +391,20 @@ fn set_mode(which: &str, args: &str) -> CommandResult {
         ));
     };
     let mut note = String::new();
+    // Require the backing skill to be installed before enabling a mode.
+    if level != Intensity::Off {
+        let need = match which {
+            "caveman" => "caveman",
+            "ponytail" => "ponytail",
+            "think" => "yuvai-thinking",
+            _ => "",
+        };
+        if !need.is_empty() {
+            if let Err(e) = ensure_skill_or_hint(need) {
+                return CommandResult::Error(e);
+            }
+        }
+    }
     match which {
         "caveman" => {
             state.caveman = level;
@@ -441,23 +596,188 @@ impl SlashCommand for CreativeCommand {
         "/creative"
     }
     fn run(&self, _ctx: &mut CommandExecCtx, _args: &str) -> CommandResult {
-        CommandResult::Message(
-            "## Logan creative stack (YUV.AI)\n\n\
-             | Intent | Command / skill |\n\
-             | --- | --- |\n\
-             | Mouse-scrub cinematic landing | `/site mouse video.mp4` · `cinematic-scrub-landing` |\n\
-             | Scroll-scrub parallax (one screen) | `/site parallax video.mp4` · `parallax-landing-page` |\n\
-             | Apple sticky scroll landing | `/site scroll video.mp4` · `video-to-landing-page` |\n\
-             | Captioned reel (16:9 + 9:16) | `/reel video.mp4` · `video-edit` |\n\
-             | HyperFrames HTML→MP4 | skill `hyperframes-master` + hyperframes/* |\n\
-             | Brand multi-output | skill `yuv-pilot` |\n\
-             | Deep teach / understand | `/think full` · `yuvai-thinking` |\n\n\
-             Skills install under `~/.logan/skills/` (seeded on install).\n\
-             Projects default: `~/Documents/yuv-projects/{landings,videos}/`.\n\
-             Docs: docs/MODES.md · docs/CREATIVE.md\n"
-                .into(),
-        )
+        let installed = list_skill_names(&skills_dir());
+        let catalog = list_skill_names(&catalog_dir());
+        let inst = if installed.is_empty() {
+            "(none - empty by default)".into()
+        } else {
+            installed.join(", ")
+        };
+        let cat = if catalog.is_empty() {
+            "(catalog empty - re-run install to populate ~/.logan/catalog/skills)".into()
+        } else {
+            catalog.join(", ")
+        };
+        CommandResult::Message(format!(
+            "## Logan creative stack (opt-in)\n\n\
+             **Nothing is forced.** Skills start empty. You add what you want.\n\n\
+             | Intent | Command | Skill to install |\n\
+             | --- | --- | --- |\n\
+             | Mouse-scrub landing | `/site mouse video.mp4` | `cinematic-scrub-landing` |\n\
+             | Scroll-scrub parallax | `/site parallax video.mp4` | `parallax-landing-page` |\n\
+             | Apple sticky scroll | `/site scroll video.mp4` | `video-to-landing-page` |\n\
+             | Captioned reel | `/reel video.mp4` | `video-edit` |\n\
+             | HyperFrames engine | ask in chat | `hyperframes-master` |\n\
+             | Brand multi-output | ask in chat | `yuv-pilot` |\n\
+             | Deep teach | `/think full` | `yuvai-thinking` |\n\n\
+             **Installed:** {inst}\n\
+             **Catalog (available):** {cat}\n\n\
+             ```text\n\
+             /skills add pack creative   # install creative pack\n\
+             /skills add yuvai-thinking  # install one skill\n\
+             /skills remove video-edit   # remove one\n\
+             /skills                     # list\n\
+             ```\n\
+             Docs: docs/CREATIVE.md · docs/MODES.md\n"
+        ))
     }
+}
+
+/// Shared by `/skills <args>` (see `plugin::SkillsCommand`).
+pub fn run_skills_manage(trimmed: &str) -> CommandResult {
+    if trimmed.is_empty() || trimmed.eq_ignore_ascii_case("list") {
+        let installed = list_skill_names(&skills_dir());
+        let body = if installed.is_empty() {
+            "(empty - Logan does not pre-install skills)\n\
+             Add: `/skills add pack creative` or `/skills add yuvai-thinking`"
+                .into()
+        } else {
+            installed
+                .iter()
+                .map(|n| format!("- `{n}`"))
+                .collect::<Vec<_>>()
+                .join("\n")
+        };
+        return CommandResult::Message(format!(
+            "## Installed skills\n\n{body}\n\n\
+             Dir: `{}`\n\
+             Catalog: `/skills catalog` · Add: `/skills add <name>` · Remove: `/skills remove <name>`\n\
+             Bare `/skills` opens the skills modal.",
+            skills_dir().display()
+        ));
+    }
+    if trimmed.eq_ignore_ascii_case("catalog") {
+        let catalog = list_skill_names(&catalog_dir());
+        let body = if catalog.is_empty() {
+            format!(
+                "(no catalog at `{}`)\n\
+                 Fix: re-run install-logan.sh (copies repo skills into **catalog only**), \
+                 or set LOGAN_SKILL_CATALOG, or copy skills there yourself.",
+                catalog_dir().display()
+            )
+        } else {
+            catalog
+                .iter()
+                .map(|n| {
+                    let mark = if skill_installed(n) {
+                        " ✓ installed"
+                    } else {
+                        ""
+                    };
+                    format!("- `{n}`{mark}")
+                })
+                .collect::<Vec<_>>()
+                .join("\n")
+        };
+        return CommandResult::Message(format!(
+            "## Skill catalog (opt-in library)\n\n{body}\n\n\
+             Install one: `/skills add <name>`\n\
+             Packs: `/skills add pack creative` · `modes` · `all`\n\
+             Nothing is active until you add it and enable modes if needed."
+        ));
+    }
+    if let Some(rest) = trimmed.strip_prefix("add ") {
+        let rest = rest.trim();
+        if let Some(pack) = rest.strip_prefix("pack ") {
+            return add_pack(pack.trim());
+        }
+        return match add_skill_from_catalog(rest) {
+            Ok(m) => CommandResult::Message(m),
+            Err(e) => CommandResult::Error(e),
+        };
+    }
+    if let Some(name) = trimmed
+        .strip_prefix("remove ")
+        .or_else(|| trimmed.strip_prefix("rm "))
+    {
+        return match remove_skill(name.trim()) {
+            Ok(m) => CommandResult::Message(m),
+            Err(e) => CommandResult::Error(e),
+        };
+    }
+    CommandResult::Error(
+        "Usage: /skills [list|catalog|add <name>|add pack <creative|modes|all>|remove <name>]\n\
+         Bare `/skills` opens the UI modal."
+            .into(),
+    )
+}
+
+fn add_pack(pack: &str) -> CommandResult {
+    let names: &[&str] = match pack.to_ascii_lowercase().as_str() {
+        "creative" | "video" | "scrub" => &[
+            "hyperframes-master",
+            "cinematic-scrub-landing",
+            "parallax-landing-page",
+            "video-to-landing-page",
+            "video-edit",
+            "yuv-pilot",
+        ],
+        "modes" | "style" => &["caveman", "ponytail", "yuvai-thinking", "whoami", "self-improve"],
+        "all" => {
+            let all = list_skill_names(&catalog_dir());
+            if all.is_empty() {
+                return CommandResult::Error(format!(
+                    "Catalog empty at {}. Cannot add pack all.",
+                    catalog_dir().display()
+                ));
+            }
+            let mut ok = Vec::new();
+            let mut err = Vec::new();
+            for n in &all {
+                match add_skill_from_catalog(n) {
+                    Ok(_) => ok.push(n.clone()),
+                    Err(e) => err.push(format!("{n}: {e}")),
+                }
+            }
+            return CommandResult::Message(format!(
+                "Pack `all`: installed {} skill(s): {}\n{}",
+                ok.len(),
+                ok.join(", "),
+                if err.is_empty() {
+                    String::new()
+                } else {
+                    format!("Errors:\n{}", err.join("\n"))
+                }
+            ));
+        }
+        _ => {
+            return CommandResult::Error(
+                "Unknown pack. Use: creative | modes | all".into(),
+            );
+        }
+    };
+    let mut ok = Vec::new();
+    let mut err = Vec::new();
+    for n in names {
+        match add_skill_from_catalog(n) {
+            Ok(_) => ok.push((*n).to_string()),
+            Err(e) => err.push(format!("{n}: {e}")),
+        }
+    }
+    CommandResult::Message(format!(
+        "Pack `{pack}`: installed {} → {}\n{}",
+        ok.len(),
+        if ok.is_empty() {
+            "(none)".into()
+        } else {
+            ok.join(", ")
+        },
+        if err.is_empty() {
+            "Modes stay off until you enable them (`/think full`, `/caveman full`, …).".into()
+        } else {
+            format!("Notes/errors:\n{}", err.join("\n"))
+        }
+    ))
 }
 
 // ── /site ─────────────────────────────────────────────────────────────────
@@ -547,11 +867,14 @@ impl SlashCommand for SiteCommand {
                 "mouse-scrub cinematic landing (golden template)",
             ),
         };
+        if let Err(e) = ensure_skill_or_hint(skill) {
+            return CommandResult::Error(e);
+        }
         CommandResult::PassThrough(format!(
             "Use the Logan skill **{skill}** now ({label}).\n\
              Source video / args: {rest}\n\
              Follow that skill's workflow end-to-end (hard rules, save paths, verification).\n\
-             Prefer YUV.AI brand defaults from PROFILE.md / yuv-design-system when relevant.\n\
+             Prefer PROFILE.md stack defaults only if the user filled them in.\n\
              Save under ~/Documents/yuv-projects/landings/<slug>/ unless the user overrode.\n\
              When done, print the output path and how to open it."
         ))
@@ -589,9 +912,12 @@ impl SlashCommand for ReelCommand {
         if trimmed.is_empty() {
             return CommandResult::Error(
                 "Usage: /reel <path-to-video> [notes]\n\
-                 Runs skill video-edit (transcript review before render, 16:9 + 9:16)."
+                 Requires skill `video-edit` (add: `/skills add video-edit` or `/skills add pack creative`)."
                     .into(),
             );
+        }
+        if let Err(e) = ensure_skill_or_hint("video-edit") {
+            return CommandResult::Error(e);
         }
         CommandResult::PassThrough(format!(
             "Use the Logan skill **video-edit** now (captioned HyperFrames showcase).\n\

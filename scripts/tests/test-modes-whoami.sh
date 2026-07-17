@@ -24,6 +24,20 @@ for cmd in CavemanCommand PonytailCommand ThinkCommand ModesCommand CreativeComm
     fail "missing command ${cmd}"
   fi
 done
+if rg -q "run_skills_manage" "${ROOT}/crates/codegen/xai-grok-pager/src/slash/commands/plugin.rs"; then
+  pass "skills manage wired into /skills"
+else
+  fail "/skills manage not wired"
+fi
+if rg -q "catalog/skills" "${ROOT}/scripts/install-logan.sh" && rg -q "empty by default\|Active skills stay empty\|not auto-enabled\|not auto-enabled" "${ROOT}/scripts/install-logan.sh"; then
+  pass "install keeps skills empty by default"
+else
+  if rg -q "Active skills stay empty" "${ROOT}/scripts/install-logan.sh"; then
+    pass "install keeps skills empty by default"
+  else
+    fail "install still force-seeds active skills?"
+  fi
+fi
 if [[ -f "${ROOT}/docs/MODES.md" ]]; then
   pass "docs/MODES.md"
 else

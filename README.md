@@ -4,11 +4,11 @@
 
 # Logan
 
-**A coding agent in your terminal** - with **token visibility**, **toggleable modes**, and a **native creative stack** for HyperFrames video + cinematic scrub landings.
+**A coding agent in your terminal** - with **token visibility**, and an **opt-in library** of modes + creative skills (HyperFrames, scrub landings, yuvai-thinking).
 
 By [Yuval Avidani (YUV.AI)](https://yuv.ai) · inspired by Wolverine · fork of [xAI Grok Build](https://github.com/xai-org/grok-build) (Apache-2.0)
 
-> **Logan ships cinematic product experiences** - HyperFrames video, scroll/mouse-scrub 3D-feeling sites, and full understanding when you turn on `/think` - with tokens you can see.
+> **Default is empty and clean.** Skills and modes are **off** until you add them. You compose Logan: add packs, remove packs, toggle `/think` / `/caveman` yourself.
 
 ---
 
@@ -53,14 +53,15 @@ logan
 | `/stats` | Tokens: input / output / cache / $ |
 | `/context deep` | Real system prompt + messages |
 | `/goal Fix the bug` | Long multi-step work |
-| `/caveman full` | Terse talk - save tokens |
-| `/think full` | Deep explain (yuvai-thinking) - exclusive with caveman |
-| `/ponytail full` | YAGNI minimal code |
-| `/whoami grill` | Teach Logan who you are + stack |
-| `/site mouse clip.mp4` | Cinematic mouse-scrub landing |
-| `/reel clip.mp4` | Captioned HyperFrames reel (16:9 + 9:16) |
-| `/creative` | Full creative stack map |
-| `/improve` | Self-heal / what it learned |
+| `/skills catalog` | See optional skills (not installed yet) |
+| `/skills add pack modes` | Install caveman / think / ponytail / whoami |
+| `/skills add pack creative` | Install HyperFrames + scrub + reels |
+| `/think full` | Deep explain - only after `yuvai-thinking` is installed |
+| `/caveman full` | Terse talk - only after `caveman` is installed |
+| `/site mouse clip.mp4` | Scrub landing - after creative pack |
+| `/reel clip.mp4` | Captioned reel - after creative pack |
+| `/whoami grill` | Optional identity interview |
+| `/improve` | Optional self-heal dashboard |
 
 Bottom bar after each reply:
 
@@ -74,38 +75,59 @@ m grok-4.5 · 24K/200K 12% · in 2.4K out 180 c 1.2K
 
 ---
 
-## Creative stack (the moat)
+## Opt-in skills (empty by default)
 
-Logan ships skills for **stunning product video + web**, not only CRUD:
+Install puts skills in a **catalog**, not into your active set:
 
-| Intent | Command | Skill |
-| --- | --- | --- |
-| Mouse-scrub hero landing | `/site mouse video.mp4` | `cinematic-scrub-landing` |
-| Scroll-scrub parallax | `/site parallax video.mp4` | `parallax-landing-page` |
-| Apple sticky scroll landing | `/site scroll video.mp4` | `video-to-landing-page` |
-| Captioned reel | `/reel video.mp4` | `video-edit` + HyperFrames |
-| HTML → MP4 engine | (auto) | `hyperframes-master` |
-| Deep understanding | `/think full` | `yuvai-thinking` |
-| Brand multi-output | ask / pilot | `yuv-pilot` |
+```text
+~/.logan/catalog/skills/   # library (available)
+~/.logan/skills/           # active (starts empty - you add)
+```
 
-Defaults save under `~/Documents/yuv-projects/{landings,videos}/`.
+```text
+/skills catalog
+/skills add pack modes       # thinking + caveman + ponytail + whoami + improve
+/skills add pack creative    # HyperFrames + scrub landings + reels
+/skills add yuvai-thinking   # one skill
+/skills remove caveman       # your agent, your choice
+```
 
-Full map: **[docs/CREATIVE.md](docs/CREATIVE.md)** · modes: **[docs/MODES.md](docs/MODES.md)** · showcase: **[examples/showcase/](examples/showcase/)**
+### Thinking is not prebaked
 
-Also: [hoodini/ai-agents-skills](https://github.com/hoodini/ai-agents-skills) · [HyperFrames](https://github.com/heygen-com/hyperframes) · [effects.yuv.ai](https://effects.yuv.ai)
+| Step | Command |
+| --- | --- |
+| 1. Install skill | `/skills add yuvai-thinking` |
+| 2. Turn mode on | `/think full` |
+| 3. Turn off | `/think off` or `/skills remove yuvai-thinking` |
+
+Without that, Logan is a normal coding agent - no forced teach-every-crumb style.
+
+### Creative pack (after you opt in)
+
+| Intent | Command |
+| --- | --- |
+| Mouse-scrub landing | `/site mouse video.mp4` |
+| Scroll-scrub parallax | `/site parallax video.mp4` |
+| Apple sticky scroll | `/site scroll video.mp4` |
+| Captioned reel | `/reel video.mp4` |
+| Stack map | `/creative` |
+
+Full map: **[docs/CREATIVE.md](docs/CREATIVE.md)** · modes: **[docs/MODES.md](docs/MODES.md)** · catalog: **[skills/README.md](skills/README.md)**
+
+Also: [hoodini/ai-agents-skills](https://github.com/hoodini/ai-agents-skills) · [HyperFrames](https://github.com/heygen-com/hyperframes)
 
 ---
 
-## Modes you control
+## Modes (also off by default)
 
-| Mode | Command | Meaning |
+| Mode | Command | Needs skill |
 | --- | --- | --- |
-| Caveman | `/caveman off\|lite\|full\|ultra` | Talk less - save output tokens |
-| Ponytail | `/ponytail off\|lite\|full\|ultra` | Build less - YAGNI |
-| Think | `/think off\|lite\|full\|ultra` | Teach every crumb (yuvai-thinking) |
-| Status | `/modes` | Show all |
+| Think | `/think off\|lite\|full\|ultra` | `yuvai-thinking` |
+| Caveman | `/caveman off\|lite\|full\|ultra` | `caveman` |
+| Ponytail | `/ponytail off\|lite\|full\|ultra` | `ponytail` |
+| Status | `/modes` | - |
 
-**`/think` and `/caveman` are exclusive** - deep explain vs terse talk. Sticky via `~/.logan/modes.toml` + `~/.logan/rules/logan-modes.md`.
+**`/think` and `/caveman` are exclusive.** Enabling a mode without the skill installed fails with a clear `/skills add …` hint.
 
 ---
 
@@ -116,8 +138,9 @@ Also: [hoodini/ai-agents-skills](https://github.com/hoodini/ai-agents-skills) ·
 | Never fly blind on cost | Live `in/out/c` bar + colorful `/stats` |
 | See the real prompt | `/context deep` reads system prompt + history text |
 | Install without a thesis | One paste on macOS, Linux, Windows |
-| Creative product craft | HyperFrames + scrub landings + reels |
-| Understand everything | `/think` + `/improve why` + whoami memory |
+| You compose the agent | Empty skills by default - add/remove packs |
+| Creative when you want it | Opt-in HyperFrames + scrub + reels |
+| Deep think when you want it | Opt-in yuvai-thinking via `/skills` + `/think` |
 | Multi-LLM | xAI, OpenAI-compat, Anthropic, local |
 | Open | Apache-2.0 fork you can audit and extend |
 

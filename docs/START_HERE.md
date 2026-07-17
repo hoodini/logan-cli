@@ -38,9 +38,9 @@ config, you do **not** need a Grok session - those keys win for that model.
 | --- | --- |
 | `/stats` | Token bill |
 | `/context deep` | Real prompt text |
-| `/creative` | HyperFrames + scrub landings map |
-| `/think full` | Deep explain mode |
-| `/site mouse clip.mp4` | Cinematic landing from video |
+| `/skills catalog` | Optional skills (empty active set by default) |
+| `/skills add pack creative` | Opt in to HyperFrames + scrub stack |
+| `/think full` | Only after `/skills add yuvai-thinking` |
 
 ## AI paste
 

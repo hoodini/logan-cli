@@ -1,6 +1,10 @@
 # Logan creative showcase
 
-Golden paths you can ask Logan to run (skills must be installed under `~/.logan/skills/`).
+Golden paths (opt-in). First install skills - Logan does **not** pre-enable them:
+
+```text
+/skills add pack creative
+```
 
 ## 1. Mouse-scrub landing
 

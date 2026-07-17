@@ -81,7 +81,10 @@ impl SlashCommand for MarketplaceCommand {
     }
 }
 
-/// Open the hooks/plugins modal on the Skills tab.
+/// Open the hooks/plugins modal on the Skills tab, or manage the opt-in catalog.
+///
+/// - Bare `/skills` → skills modal (existing UX)
+/// - `/skills list|catalog|add|remove …` → catalog install/remove (empty-by-default packs)
 pub struct SkillsCommand;
 
 impl SlashCommand for SkillsCommand {
@@ -89,18 +92,35 @@ impl SlashCommand for SkillsCommand {
         "skills"
     }
 
+    fn aliases(&self) -> &[&str] {
+        &["skill", "skill-pack"]
+    }
+
     fn description(&self) -> &str {
-        "View skills"
+        "Skills modal, or add/remove optional skill packs"
     }
 
     fn usage(&self) -> &str {
-        "/skills"
+        "/skills [list|catalog|add <name>|add pack <pack>|remove <name>]"
     }
 
-    fn run(&self, _ctx: &mut CommandExecCtx, _args: &str) -> CommandResult {
-        CommandResult::Action(Action::OpenExtensionsModal {
-            tab: ExtensionsTab::Skills,
-            trigger: ExtensionsModalTrigger::SlashCommand,
-        })
+    fn takes_args(&self) -> bool {
+        true
+    }
+
+    fn arg_placeholder(&self) -> Option<&str> {
+        Some("[list|catalog|add …|remove …]")
+    }
+
+    fn run(&self, _ctx: &mut CommandExecCtx, args: &str) -> CommandResult {
+        let trimmed = args.trim();
+        if trimmed.is_empty() {
+            return CommandResult::Action(Action::OpenExtensionsModal {
+                tab: ExtensionsTab::Skills,
+                trigger: ExtensionsModalTrigger::SlashCommand,
+            });
+        }
+        // Opt-in catalog management (Logan starts with empty ~/.logan/skills).
+        crate::slash::commands::logan_modes::run_skills_manage(trimmed)
     }
 }

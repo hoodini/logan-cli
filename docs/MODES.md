@@ -1,80 +1,78 @@
-# Logan modes: caveman, ponytail, whoami, improve
+# Logan modes + skills (opt-in)
 
 **Author:** Yuval Avidani (YUV.AI)
 
-## Why these modes exist
+## Defaults
 
-Two viral agent skills showed up hard in 2026:
+| Thing | Default |
+| --- | --- |
+| Active skills (`~/.logan/skills/`) | **Empty** |
+| Modes (caveman / ponytail / think) | **All off** |
+| Profile / preferences | **Empty** (you fill with `/whoami` if you want) |
+| Creative HyperFrames rules | **Not injected** unless you install those skills |
 
-| Skill | Hype | Real idea |
+You own the set: add, remove, change anytime.
+
+## Thinking - is it prebaked?
+
+**No.** `yuvai-thinking` is only a catalog entry until you:
+
+1. `/skills add yuvai-thinking`
+2. `/think full`
+
+Then sticky rules file gets the teach-every-crumb instructions.  
+`/think off` or `/skills remove yuvai-thinking` removes that behavior.
+
+## Modes (after you install their skills)
+
+| Command | Needs skill | Purpose |
 | --- | --- | --- |
-| **[Caveman](https://github.com/JuliusBrussee/caveman)** | "65% fewer tokens" | Talk less. Keep code/errors exact. Biggest win on **prose**, not tool-heavy coding turns. Independent tests saw smaller savings on full agent loops - still useful for less chatter. |
-| **[Ponytail](https://github.com/DietrichGebert/ponytail)** | "lazy senior / YAGNI" | Write less **code**. Stdlib/native first. Shortest working diff. Saves tokens by not over-building. |
+| `/caveman off\|lite\|full\|ultra` | `caveman` | Terse talk - save tokens |
+| `/ponytail off\|lite\|full\|ultra` | `ponytail` | YAGNI / minimal code |
+| `/think off\|lite\|full\|ultra` | `yuvai-thinking` | Deep explain every crumb |
+| `/modes` | - | Status |
 
-Logan ships both as **native toggleable modes** - not a forced personality.
+**`/think` ↔ `/caveman` exclusive.**
 
-## Quick commands
+## Skills management
 
-| Command | Purpose |
-| --- | --- |
-| `/caveman off\|lite\|full\|ultra` | Terse talk mode |
-| `/ponytail off\|lite\|full\|ultra` | Minimal code / YAGNI |
-| `/think off\|lite\|full\|ultra` | Deep explain (yuvai-thinking) - exclusive with caveman |
-| `/modes` | Show all modes |
-| `/creative` | Creative stack map |
-| `/site [mouse\|parallax\|scroll] <video>` | Scrub / landing from video |
-| `/reel <video>` | Captioned HyperFrames reel |
-| `/whoami` | Show identity profile |
-| `/whoami grill` | Interview for socials + stack + taste |
-| `/whoami update <fact>` | Append a fact |
-| `/improve` | Self-heal dashboard |
-| `/improve why` | Explain last decision path |
-| `/heal` · `/reflections` | Aliases for improve |
-
-## How enable/disable works
-
-1. Slash command writes `~/.logan/modes.toml`
-2. Mirrors sticky instructions to `~/.logan/rules/logan-modes.md`
-3. Global rules load every session - so the mode **sticks** until you turn it off
-
-**`/think` and `/caveman` are exclusive** - turning one on turns the other off.
-
-You choose. Default seed is **all off**.
-
-## Whoami + memory
-
-| File | Role |
-| --- | --- |
-| `~/.logan/memory/PROFILE.md` | Identity, links, stack |
-| `~/.logan/memory/MEMORY.md` | Preferences + lessons |
-| `~/.logan/memory/IMPROVEMENTS.md` | Structured improve journal |
-| `~/.logan/memory/reflections.log` | Hook firehose |
-
-First time: `/whoami grill`. Ongoing: `/whoami update …` or `/remember …`.
-
-## Self-improve visibility
-
-Logan should not learn in the dark:
-
-- Hooks append reflection stubs (Stop / SessionEnd)
-- `/improve` shows logs + journal
-- `/improve why` forces a clear decision postmortem
-- Agent should append IMPROVEMENTS.md after non-trivial fixes
-
-## HyperFrames default
-
-For video / motion / captions work, Logan prefers **HyperFrames**  
-(https://github.com/heygen-com/hyperframes). Skill: `hyperframes-master` plus workflow skills already under `~/.logan/skills/`.
-
-## Install
-
-Native skills ship in the repo under `skills/` and are seeded by `install-logan.sh`.
-
-```bash
-# after install / rebuild
-logan
-/caveman full
-/ponytail lite
-/whoami grill
-/improve
+```text
+/skills                  # modal
+/skills list
+/skills catalog
+/skills add pack modes
+/skills add pack creative
+/skills add <name>
+/skills remove <name>
 ```
+
+Packs:
+
+| Pack | Skills |
+| --- | --- |
+| `modes` | caveman, ponytail, yuvai-thinking, whoami, self-improve |
+| `creative` | hyperframes-master, cinematic-scrub, parallax, video-to-landing, video-edit, yuv-pilot |
+| `all` | entire catalog |
+
+## Whoami / improve
+
+Also optional - they use memory files under `~/.logan/memory/`.  
+`/whoami grill` works without a skill file, but the **whoami** skill adds richer interview structure if installed.
+
+## Persistence
+
+- Modes → `~/.logan/modes.toml` + `~/.logan/rules/logan-modes.md` (only ON modes + installed skill list)
+- Skills → files you copy in/out of `~/.logan/skills/`
+- Catalog → `~/.logan/catalog/skills/` (read-only library from install)
+
+Env overrides:
+
+| Env | Effect |
+| --- | --- |
+| `LOGAN_SEED_SKILLS=1` | Install all catalog skills as active (not default) |
+| `LOGAN_SYNC_SIBLING_SKILLS=1` | Also copy from ~/.claude / ~/.grok skills |
+| `LOGAN_SKILL_CATALOG=path` | Custom catalog root |
+
+## Why empty default?
+
+Different users want different agents. Forcing HyperFrames + yuvai-thinking + caveman on everyone is wrong. Logan ships a **library** and **commands**; you compose your agent.

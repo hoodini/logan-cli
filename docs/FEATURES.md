@@ -24,12 +24,12 @@ token visibility, auto-routing, goals, observability, and remote-agent use.
 | **Memory / self-improve** | **Yes (Logan)** | Memory + dream + skills + auto-reflect hooks |
 | **Smart auto model routing** | **`--route auto` shipped** | Heuristic classifier → `tier-*` before sample; skill still available |
 | **`/stats`** | **Shipped** | **Colorful** session ledger: IN/OUT/CACHE/REASON/$ by model (bold, high contrast) |
-| **`/caveman` · `/ponytail` · `/think`** | **Shipped** | Talk / YAGNI / yuvai-thinking modes - sticky rules |
-| **`/modes` · `/creative`** | **Shipped** | Mode status + creative stack map |
-| **`/site` · `/reel`** | **Shipped** | Scrub landings + captioned HyperFrames reels |
-| **`/whoami`** | **Shipped** | Identity profile grill + PROFILE.md memory |
-| **`/improve` · `/heal`** | **Shipped** | Self-heal / self-improve visibility journal |
-| **HyperFrames + scrub skills** | **Shipped** | cinematic-scrub, parallax, video-edit, yuv-pilot, yuvai-thinking |
+| **Opt-in skills** | **Shipped** | Empty `~/.logan/skills/` by default · `/skills add|remove|catalog` |
+| **`/caveman` · `/ponytail` · `/think`** | **Shipped** | Modes off by default · require installed skill |
+| **`/modes` · `/creative`** | **Shipped** | Status + creative map (shows installed vs catalog) |
+| **`/site` · `/reel`** | **Shipped** | Need creative skills installed first |
+| **`/whoami` · `/improve`** | **Shipped** | Optional identity + heal journal |
+| **Catalog skills** | **Shipped** | In repo + `~/.logan/catalog/skills` - not auto-active |
 | **`/context deep`** | **Shipped** | **Actual** system prompt + chat history text for those tokens (not only counts) |
 | **Live status bar last-turn** | **Shipped** | Every sample: `in / out / c` from `PromptResponse._meta`; mid-tool window fill too |
 | **Dual-stack status chips** | **Shipped** | `m <model> · s <search> · mcp N` on status bar |

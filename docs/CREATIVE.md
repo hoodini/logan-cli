@@ -1,67 +1,58 @@
-# Logan creative stack (HyperFrames + YUV.AI)
+# Logan creative stack (opt-in)
 
 **Author:** Yuval Avidani (YUV.AI)
 
-Logan is not only a coding agent - it ships a **native creative OS** for cinematic video and 3D-feeling web landings.
+Creative skills are **available in the catalog**, not forced on.
 
-## Why this exists
+## Default: empty
 
-Most agents write generic React. Logan is tuned for:
-
-- **HyperFrames** - HTML compositions → MP4 ([heygen-com/hyperframes](https://github.com/heygen-com/hyperframes))
-- **Scroll / mouse video scrub landings** - Apple / Copilot-style product sites
-- **Captioned reels** - Hebrew + English, transcript review before render
-- **yuvai-thinking** - every crumb explained when you want to *learn*, not just ship
-
-Skills also live in [hoodini/ai-agents-skills](https://github.com/hoodini/ai-agents-skills). Install seeds them into `~/.logan/skills/`.
-
-## Slash shortcuts
-
-| Command | What it does |
+| Path | Role |
 | --- | --- |
-| `/creative` | Map of the whole stack |
-| `/site mouse video.mp4` | **cinematic-scrub-landing** - cursor scrubs hero video |
-| `/site parallax video.mp4` | **parallax-landing-page** - scroll scrubs frames (one viewport) |
-| `/site scroll video.mp4` | **video-to-landing-page** - sticky Apple-style scroll hero |
-| `/reel video.mp4` | **video-edit** - captioned HyperFrames 16:9 + 9:16 |
-| `/think full` | **yuvai-thinking** - deep teach mode (exclusive with `/caveman`) |
+| `~/.logan/skills/` | **Active** skills - starts **empty** |
+| `~/.logan/catalog/skills/` | Library install can pull from |
 
-## Skills (seeded)
+You choose what to add or remove.
 
-| Skill | Role |
-| --- | --- |
-| `hyperframes-master` | Default video engine + workflow router |
-| `cinematic-scrub-landing` | Mouse-scrub golden template landings |
-| `parallax-landing-page` | Scroll-scrub single-hero landings |
-| `video-to-landing-page` | Sticky scroll-frame landings |
-| `video-edit` | Captioned showcase pipeline |
-| `yuv-pilot` | Brand multi-output orchestrator |
-| `yuvai-thinking` | Learning / teaching cascade |
+## Install packs
 
-Plus the HyperFrames companions usually synced from agent homes (`hyperframes`, `hyperframes-core`, …).
+```text
+/skills catalog
+/skills add pack creative    # HyperFrames + scrub + reels + yuv-pilot
+/skills add pack modes       # caveman + ponytail + yuvai-thinking + whoami + self-improve
+/skills add yuvai-thinking   # one skill
+/skills remove video-edit
+```
 
-## Project save paths
+## After pack creative
+
+| Intent | Command | Skill |
+| --- | --- | --- |
+| Mouse-scrub landing | `/site mouse video.mp4` | `cinematic-scrub-landing` |
+| Scroll-scrub parallax | `/site parallax video.mp4` | `parallax-landing-page` |
+| Apple sticky scroll | `/site scroll video.mp4` | `video-to-landing-page` |
+| Captioned reel | `/reel video.mp4` | `video-edit` |
+| Stack map | `/creative` | - |
+
+If the skill is missing, Logan tells you how to add it - it will not silently invent the stack.
+
+## Thinking (yuvai-thinking)
+
+**Not prebaked.** Normal install does not enable teach-every-crumb mode.
+
+```text
+/skills add yuvai-thinking
+/think full          # sticky ON
+/think off           # back to normal
+/skills remove yuvai-thinking
+```
+
+`/think` and `/caveman` are exclusive.
+
+## Project save paths (when you use creative skills)
 
 | Output | Default folder |
 | --- | --- |
 | Landings | `~/Documents/yuv-projects/landings/<slug>/` |
 | Videos | `~/Documents/yuv-projects/videos/<slug>/` |
 
-## Modes that pair well
-
-| Goal | Modes |
-| --- | --- |
-| Ship a landing fast | `/ponytail lite` · caveman off |
-| Understand every step | `/think full` (turns caveman off) |
-| Save talk tokens | `/caveman full` (turns think off) |
-
-## One-liner mental model
-
-```text
-video ──► /reel     → captioned HyperFrames MP4
-video ──► /site     → stunning scrub / parallax landing
-topic ──► /think    → full understanding (yuvai-thinking)
-brand ──► yuv-pilot → deck + site + reel composition
-```
-
-See also: [MODES.md](MODES.md) · [FEATURES.md](FEATURES.md)
+See also: [MODES.md](MODES.md) · [skills/README.md](../skills/README.md)
