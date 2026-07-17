@@ -28,6 +28,13 @@ const MSG_AUTO_UPDATE_BACKGROUND: &str = "Auto-update running in background.";
 const MSG_RUN_UPDATE_MANUAL: &str = "Run `logan update` to get the latest version.";
 /// Manual-install one-liner for this platform's bootstrap installer.
 fn manual_install_cmd() -> &'static str {
+    // Logan fork: always point users at hoodini/logan-cli install, not x.ai Grok.
+    if is_logan_product() {
+        if cfg!(windows) {
+            return "irm https://raw.githubusercontent.com/hoodini/logan-cli/main/scripts/install-logan.ps1 | iex";
+        }
+        return "curl -fsSL https://raw.githubusercontent.com/hoodini/logan-cli/main/scripts/install-logan.sh | bash";
+    }
     if cfg!(windows) {
         "irm https://x.ai/cli/install.ps1 | iex"
     } else {
@@ -35,8 +42,82 @@ fn manual_install_cmd() -> &'static str {
     }
 }
 
+/// True when this binary is the Logan product (not upstream Grok Build).
+fn is_logan_product() -> bool {
+    if std::env::var_os("LOGAN_PRODUCT").is_some() {
+        return true;
+    }
+    if let Ok(exe) = std::env::current_exe() {
+        if let Some(stem) = exe.file_stem().and_then(|s| s.to_str()) {
+            if stem.eq_ignore_ascii_case("logan") {
+                return true;
+            }
+        }
+    }
+    // This fork always prefers Logan install paths over x.ai Grok CDN.
+    true
+}
+
+/// Logan-specific update: re-run install-logan.sh from GitHub main.
+async fn run_logan_source_update(force: bool) -> Result<Option<String>> {
+    let _ = force;
+    let current = get_installed_grok_version();
+    eprintln!("Updating Logan (current: {current})");
+    eprintln!("  Source: https://github.com/hoodini/logan-cli (main)");
+    eprintln!();
+    eprintln!("  Running install script (build may take several minutes)…");
+    eprintln!();
+
+    let status = if cfg!(windows) {
+        Command::new("powershell")
+            .args([
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-Command",
+                "irm https://raw.githubusercontent.com/hoodini/logan-cli/main/scripts/install-logan.ps1 | iex",
+            ])
+            .env("LOGAN_INSTALL_NO_START", "1")
+            .status()
+            .context("spawning PowerShell install-logan.ps1")?
+    } else {
+        Command::new("bash")
+            .arg("-lc")
+            .arg(
+                "export LOGAN_INSTALL_NO_START=1; \
+                 export PATH=\"$HOME/.cargo/bin:/opt/homebrew/bin:/usr/local/bin:$PATH\"; \
+                 curl -fsSL https://raw.githubusercontent.com/hoodini/logan-cli/main/scripts/install-logan.sh | bash",
+            )
+            .status()
+            .context("spawning install-logan.sh")?
+    };
+
+    if !status.success() {
+        anyhow::bail!(
+            "Logan install script failed (exit {}).\n\n{}",
+            status.code().unwrap_or(-1),
+            reinstall_hint("internal")
+        );
+    }
+
+    let new_ver = get_installed_grok_version();
+    eprintln!();
+    eprintln!("  ✓ Logan updated (now: {new_ver})");
+    eprintln!("  Please restart Logan (`exit` the TUI, then run `logan` again).");
+    eprintln!("  Or inside TUI next time: `/update`");
+    Ok(Some(new_ver))
+}
+
 /// Build a reinstall hint for a known installer type.
 fn reinstall_hint(installer: &str) -> String {
+    if is_logan_product() {
+        return format!(
+            "Please reinstall Logan via:\n  {}\n\n\
+             Or inside the TUI: `/update`  (then restart Logan)\n\
+             Outside: `logan update` now uses the same install path.",
+            manual_install_cmd()
+        );
+    }
     match installer {
         "npm" => "Please reinstall via npm:\n  npm i -g @xai-official/grok".to_string(),
         "gh-release" => "Please reinstall via GitHub Releases:\n  gh release download --repo xai-org-shared/grok-build --pattern 'grok-*' --output grok && chmod +x grok".to_string(),
@@ -100,6 +181,19 @@ pub fn print_update_status(status: &UpdateStatus, json: bool) -> anyhow::Result<
 }
 
 pub async fn check_update_status(update_config: &UpdateConfig) -> UpdateStatus {
+    // Logan: no x.ai Grok channel pointer. Point users at source install.
+    if is_logan_product() {
+        let current = get_installed_grok_version();
+        return UpdateStatus {
+            current_version: current.clone(),
+            latest_version: Some("main (GitHub hoodini/logan-cli)".into()),
+            update_available: true,
+            installer: Some("internal".into()),
+            channel: "source".into(),
+            auto_update: None,
+            error: None,
+        };
+    }
     let installer = get_installer().await.map(|value| value.to_string());
     let current_version = get_installed_grok_version();
     let current_config = config::load_config().await;
@@ -1422,17 +1516,22 @@ async fn swap_managed_bin_links(
 /// [`swap_managed_bin_links`]. `Absent` vs `Present` is discriminated up
 /// front via `symlink_metadata` so capture errors never get misread as
 /// "link was absent".
+///
+/// Unix installers sometimes place a **regular file** at `~/.logan/bin/logan`
+/// (copy) rather than a symlink. Capture must not call `read_link` on that
+/// path (EINVAL / os error 22). Regular files are backed up like Windows.
 enum LinkRollback {
     /// Link was absent before the swap; rollback removes the one we created.
     Absent { link_path: std::path::PathBuf },
-    /// Link existed before the swap; rollback restores its prior contents.
-    Present {
+    /// Prior path was a symlink; rollback restores that target.
+    #[cfg(unix)]
+    PresentSymlink {
         link_path: std::path::PathBuf,
-        /// Unix: prior symlink target (relative or absolute).
-        #[cfg(unix)]
         prior_target: std::path::PathBuf,
-        /// Windows: `.rollback.bak` copy of the previous binary.
-        #[cfg(windows)]
+    },
+    /// Prior path was a regular file (or non-symlink); rollback restores from backup.
+    PresentFile {
+        link_path: std::path::PathBuf,
         backup_path: std::path::PathBuf,
     },
 }
@@ -1444,28 +1543,45 @@ impl LinkRollback {
         // `symlink_metadata` (lstat) handles valid symlinks, broken
         // symlinks, and regular files alike. Any IO error other than
         // NotFound aborts the swap before mutation.
-        match tokio::fs::symlink_metadata(&lp).await {
-            Ok(_) => {}
+        let meta = match tokio::fs::symlink_metadata(&lp).await {
+            Ok(m) => m,
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
                 return Ok(LinkRollback::Absent { link_path: lp });
             }
             Err(e) => {
                 return Err(e).with_context(|| format!("stat {} before swap", lp.display()));
             }
-        }
+        };
 
         #[cfg(unix)]
         {
-            let prior_target = tokio::fs::read_link(&lp)
-                .await
-                .with_context(|| format!("reading prior symlink target {}", lp.display()))?;
-            Ok(LinkRollback::Present {
+            if meta.file_type().is_symlink() {
+                let prior_target = tokio::fs::read_link(&lp)
+                    .await
+                    .with_context(|| format!("reading prior symlink target {}", lp.display()))?;
+                return Ok(LinkRollback::PresentSymlink {
+                    link_path: lp,
+                    prior_target,
+                });
+            }
+            // Regular file (copy install): back up for rollback - never read_link
+            // (EINVAL / os error 22 on non-symlinks).
+            let backup_path = unique_temp_sibling(&lp, "rollback.bak");
+            tokio::fs::copy(&lp, &backup_path).await.with_context(|| {
+                format!(
+                    "backing up regular file {} to {} before swap",
+                    lp.display(),
+                    backup_path.display(),
+                )
+            })?;
+            return Ok(LinkRollback::PresentFile {
                 link_path: lp,
-                prior_target,
-            })
+                backup_path,
+            });
         }
         #[cfg(windows)]
         {
+            let _ = meta;
             // Per-process+sequence backup name via `unique_temp_sibling`
             // so concurrent updaters can't clobber each other's backups.
             let backup_path = unique_temp_sibling(&lp, "rollback.bak");
@@ -1476,31 +1592,35 @@ impl LinkRollback {
                     backup_path.display(),
                 )
             })?;
-            Ok(LinkRollback::Present {
+            Ok(LinkRollback::PresentFile {
                 link_path: lp,
                 backup_path,
             })
+        }
+        #[cfg(not(any(unix, windows)))]
+        {
+            let _ = meta;
+            Ok(LinkRollback::Absent { link_path: lp })
         }
     }
 
     fn link_path(&self) -> &std::path::Path {
         match self {
             LinkRollback::Absent { link_path } => link_path,
-            LinkRollback::Present { link_path, .. } => link_path,
+            #[cfg(unix)]
+            LinkRollback::PresentSymlink { link_path, .. } => link_path,
+            LinkRollback::PresentFile { link_path, .. } => link_path,
         }
     }
 
-    /// Path to the on-disk backup (Windows only — Unix is in-memory).
-    #[cfg(windows)]
+    /// Path to the on-disk backup when one was created.
     fn backup_path(&self) -> Option<&std::path::Path> {
         match self {
-            LinkRollback::Present { backup_path, .. } => Some(backup_path),
+            LinkRollback::PresentFile { backup_path, .. } => Some(backup_path),
+            #[cfg(unix)]
+            LinkRollback::PresentSymlink { .. } => None,
             LinkRollback::Absent { .. } => None,
         }
-    }
-    #[cfg(unix)]
-    fn backup_path(&self) -> Option<&std::path::Path> {
-        None
     }
 
     async fn restore(&self) -> Result<()> {
@@ -1517,7 +1637,7 @@ impl LinkRollback {
                 }
             }
             #[cfg(unix)]
-            LinkRollback::Present {
+            LinkRollback::PresentSymlink {
                 link_path,
                 prior_target,
             } => atomic_symlink_swap(prior_target, link_path)
@@ -1525,34 +1645,61 @@ impl LinkRollback {
                 .with_context(|| {
                     format!("restoring prior symlink target for {}", link_path.display())
                 }),
-            #[cfg(windows)]
-            LinkRollback::Present {
+            LinkRollback::PresentFile {
                 link_path,
                 backup_path,
             } => {
-                // Route through `windows_replace_exe` so rollback inherits
-                // the same ERROR_SHARING_VIOLATION rename-aside fallback
-                // as the forward path.
-                windows_replace_exe(backup_path, link_path)
-                    .await
-                    .with_context(|| {
+                // Restore regular-file prior binary (Unix copy install or Windows).
+                #[cfg(windows)]
+                {
+                    windows_replace_exe(backup_path, link_path)
+                        .await
+                        .with_context(|| {
+                            format!(
+                                "restoring {} from {}",
+                                link_path.display(),
+                                backup_path.display()
+                            )
+                        })
+                }
+                #[cfg(unix)]
+                {
+                    // Replace link_path with the backup file contents.
+                    let tmp = unique_temp_sibling(link_path, "restore.tmp");
+                    tokio::fs::copy(backup_path, &tmp).await.with_context(|| {
+                        format!("copying backup {} to temp", backup_path.display())
+                    })?;
+                    #[cfg(unix)]
+                    {
+                        use std::os::unix::fs::PermissionsExt;
+                        let _ = tokio::fs::set_permissions(
+                            &tmp,
+                            std::fs::Permissions::from_mode(0o755),
+                        )
+                        .await;
+                    }
+                    tokio::fs::rename(&tmp, link_path).await.with_context(|| {
                         format!(
                             "restoring {} from {}",
                             link_path.display(),
                             backup_path.display()
                         )
-                    })
+                    })?;
+                    Ok(())
+                }
+                #[cfg(not(any(unix, windows)))]
+                {
+                    let _ = (link_path, backup_path);
+                    Ok(())
+                }
             }
         }
     }
 
     async fn cleanup(&self) {
-        #[cfg(windows)]
-        if let LinkRollback::Present { backup_path, .. } = self {
+        if let LinkRollback::PresentFile { backup_path, .. } = self {
             let _ = tokio::fs::remove_file(backup_path).await;
         }
-        #[cfg(unix)]
-        let _ = self; // no on-disk backup on Unix
     }
 }
 
@@ -2162,6 +2309,12 @@ pub async fn run_update(
     channel_switch: Option<&str>,
     update_config: &mut UpdateConfig,
 ) -> Result<Option<String>> {
+    // Logan product: do not pull x.ai Grok CDN binaries. Re-run the
+    // hoodini/logan-cli install script (git main + build + install).
+    if is_logan_product() && pinned_version.is_none() {
+        return run_logan_source_update(force).await;
+    }
+
     apply_channel_switch(channel_switch, update_config).await;
     let installer = match get_installer().await {
         Some(i) => i,

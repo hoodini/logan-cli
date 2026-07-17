@@ -74,14 +74,17 @@ logan
 ### Outside the TUI
 
 ```bash
-# release channel
-logan update
-
-# or full reinstall from GitHub main (no auto-start)
+# Preferred: pull GitHub main + rebuild + install (no auto-start)
 curl -fsSL https://raw.githubusercontent.com/hoodini/logan-cli/main/scripts/install-logan.sh | LOGAN_INSTALL_NO_START=1 bash
+
+# Same path via CLI once you have a current binary:
+logan update
 ```
 
-> First time after this feature ships: if `/update` is unknown, run the install line above once outside the TUI, then use `/update` forever after.
+`logan update` uses the **Logan install script** (hoodini/logan-cli), not the x.ai Grok CDN.  
+If an old binary still tries to download "Grok 0.2.x", run the curl install line once to replace it.
+
+> After any update, restart Logan so the new binary is loaded.
 
 ---
 
