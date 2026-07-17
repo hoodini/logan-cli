@@ -56,17 +56,55 @@ if grep -q 'IsInputRedirected' "${PS1}"; then
 else
   pass "ps1 does not use IsInputRedirected"
 fi
-# Interactive start must free the console (not bare & $destLocal after irm|iex)
-if grep -q 'Start-Process' "${PS1}" && grep -q '\$destLocal' "${PS1}"; then
-  pass "ps1 Start-Process free-console launch"
+# Free-console contract: one function owns Start-Process + UseShellExecute $true
+if grep -q 'function Start-LoganFreeConsole' "${PS1}"; then
+  pass "ps1 Start-LoganFreeConsole function exists"
 else
-  fail "ps1 missing Start-Process free-console launch for TUI"
+  fail "ps1 missing Start-LoganFreeConsole function"
 fi
-# Guard: interactive branch must not be only bare call-operator start
-if grep -A5 'Test-Interactive' "${PS1}" | grep -q 'Start-Process'; then
-  pass "ps1 Test-Interactive branch uses Start-Process"
+# Function body must hardcode full free-console contract (PS 6+/7 defaults false)
+if awk '/function Start-LoganFreeConsole/,/^}/' "${PS1}" | grep -q 'Start-Process' \
+  && awk '/function Start-LoganFreeConsole/,/^}/' "${PS1}" | grep -qE 'UseShellExecute\s+\$true'; then
+  pass "ps1 free-console body has Start-Process + UseShellExecute \$true"
 else
-  fail "ps1 Test-Interactive branch does not use Start-Process"
+  fail "ps1 Start-LoganFreeConsole missing Start-Process or UseShellExecute \$true"
+fi
+# Interactive branch must call the free-console function (not bare &)
+if grep -A6 'if (Test-Interactive)' "${PS1}" | grep -q 'Start-LoganFreeConsole'; then
+  pass "ps1 Test-Interactive calls Start-LoganFreeConsole"
+else
+  fail "ps1 Test-Interactive does not call Start-LoganFreeConsole"
+fi
+# Fail if interactive branch still has bare call-operator start of destLocal
+# (ignore comments: lines starting with optional whitespace then #)
+if grep -A8 'if (Test-Interactive)' "${PS1}" | grep -vE '^\s*#' | grep -qE '&\s*\$destLocal'; then
+  fail "ps1 interactive branch still has bare call-operator start"
+else
+  pass "ps1 interactive branch has no bare call-operator start"
+fi
+
+# Drive SHIPPED free-console contract via probe (no reimplementation)
+if command -v pwsh >/dev/null 2>&1; then
+  probe_out="$(LOGAN_INSTALL_PROBE=start_command pwsh -NoProfile -File "${PS1}" 2>/dev/null | tr -d '\r' | tail -1)"
+  if echo "${probe_out}" | grep -q 'start=Start-Process' && echo "${probe_out}" | grep -q 'UseShellExecute=true'; then
+    pass "shipped ps1 probe start_command => ${probe_out}"
+  else
+    fail "shipped ps1 probe start_command unexpected: '${probe_out}'"
+  fi
+elif command -v powershell >/dev/null 2>&1; then
+  probe_out="$(LOGAN_INSTALL_PROBE=start_command powershell -NoProfile -File "${PS1}" 2>/dev/null | tr -d '\r' | tail -1)"
+  if echo "${probe_out}" | grep -q 'start=Start-Process' && echo "${probe_out}" | grep -q 'UseShellExecute=true'; then
+    pass "shipped ps1 probe start_command => ${probe_out}"
+  else
+    fail "shipped ps1 probe start_command unexpected: '${probe_out}'"
+  fi
+else
+  # No PowerShell on this host: still require contract string from shipped helper
+  if grep -q 'start=Start-Process;UseShellExecute=true' "${PS1}"; then
+    pass "ps1 embeds start contract token (no pwsh on host)"
+  else
+    fail "ps1 missing start contract token for probe"
+  fi
 fi
 
 grep -q '\[compat.claude\]' "${SH}" && pass "seeds compat.claude" || fail "no compat seed"

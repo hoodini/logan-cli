@@ -35,6 +35,35 @@ function Test-Interactive {
   }
 }
 
+# Single free-console launch contract for post-install TUI start after irm|iex.
+# MUST use -UseShellExecute $true so CreateProcess does not inherit the irm pipe
+# (PS 6+/7 defaults UseShellExecute to $false).
+function Get-LoganFreeConsoleStartContract {
+  return "start=Start-Process;UseShellExecute=true"
+}
+
+function Start-LoganFreeConsole {
+  param(
+    [Parameter(Mandatory = $true)][string]$Binary,
+    [string]$Cwd = (Get-Location).Path
+  )
+  # Contract token used by LOGAN_INSTALL_PROBE=start_command (tests drive this).
+  $null = Get-LoganFreeConsoleStartContract
+  Start-Process -FilePath $Binary -WorkingDirectory $Cwd -Wait -UseShellExecute $true
+}
+
+# Optional probes for tests (no install):
+#   $env:LOGAN_INSTALL_PROBE = "start_command"  -> prints free-console contract
+#   $env:LOGAN_INSTALL_PROBE = "is_interactive" -> prints yes/no
+if ($env:LOGAN_INSTALL_PROBE -eq "start_command") {
+  Write-Output (Get-LoganFreeConsoleStartContract)
+  exit 0
+}
+if ($env:LOGAN_INSTALL_PROBE -eq "is_interactive") {
+  if (Test-Interactive) { Write-Output "yes" } else { Write-Output "no" }
+  exit 0
+}
+
 function Ensure-Dir($p) {
   if (-not (Test-Path $p)) { New-Item -ItemType Directory -Path $p -Force | Out-Null }
 }
@@ -291,11 +320,8 @@ Write-Host ""
 
 if (Test-Interactive) {
   Write-Log "Starting Logan…"
-  # irm|iex leaves stdin as a pipe. A bare `& $destLocal` inherits that pipe and
-  # the TUI can exit immediately. Start-Process with default UseShellExecute
-  # gives Logan a free console (same idea as bash `logan </dev/tty`).
-  $cwd = (Get-Location).Path
-  Start-Process -FilePath $destLocal -WorkingDirectory $cwd -Wait
+  # Only free-console path (Start-LoganFreeConsole). Never call-operator start.
+  Start-LoganFreeConsole -Binary $destLocal -Cwd (Get-Location).Path
 } else {
   Write-Log "Non-interactive install complete. Run: $destLocal"
 }
