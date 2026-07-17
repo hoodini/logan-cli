@@ -48,17 +48,25 @@ grep -qi 'Ensure-Protoc\|protoc' "${PS1}" && pass "ps1 protoc bootstrap" || fail
 grep -q 'LOGAN_INSTALL_NO_START' "${PS1}" && pass "ps1 interactive gate" || fail "ps1 no interactive gate"
 # Must NOT require IsInputRedirected false for start (irm|iex always redirects)
 if grep -q 'IsInputRedirected' "${PS1}"; then
-  # Allowed only if not used as a hard requirement for start - flag if still blocking
-  if grep -n 'IsInputRedirected' "${PS1}" | grep -qv '^'; then
-    # Fail if Test-Interactive still ANDs with -not IsInputRedirected
-    if grep -q 'UserInteractive.*IsInputRedirected\|IsInputRedirected.*UserInteractive' "${PS1}"; then
-      fail "ps1 still blocks on IsInputRedirected (breaks irm|iex auto-start)"
-    else
-      pass "ps1 IsInputRedirected not blocking start"
-    fi
+  if grep -q 'UserInteractive.*IsInputRedirected\|IsInputRedirected.*UserInteractive' "${PS1}"; then
+    fail "ps1 still blocks on IsInputRedirected (breaks irm|iex auto-start)"
+  else
+    pass "ps1 IsInputRedirected not blocking start"
   fi
 else
   pass "ps1 does not use IsInputRedirected"
+fi
+# Interactive start must free the console (not bare & $destLocal after irm|iex)
+if grep -q 'Start-Process' "${PS1}" && grep -q '\$destLocal' "${PS1}"; then
+  pass "ps1 Start-Process free-console launch"
+else
+  fail "ps1 missing Start-Process free-console launch for TUI"
+fi
+# Guard: interactive branch must not be only bare call-operator start
+if grep -A5 'Test-Interactive' "${PS1}" | grep -q 'Start-Process'; then
+  pass "ps1 Test-Interactive branch uses Start-Process"
+else
+  fail "ps1 Test-Interactive branch does not use Start-Process"
 fi
 
 grep -q '\[compat.claude\]' "${SH}" && pass "seeds compat.claude" || fail "no compat seed"

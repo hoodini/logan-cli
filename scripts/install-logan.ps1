@@ -291,7 +291,11 @@ Write-Host ""
 
 if (Test-Interactive) {
   Write-Log "Starting Logan…"
-  & $destLocal
+  # irm|iex leaves stdin as a pipe. A bare `& $destLocal` inherits that pipe and
+  # the TUI can exit immediately. Start-Process with default UseShellExecute
+  # gives Logan a free console (same idea as bash `logan </dev/tty`).
+  $cwd = (Get-Location).Path
+  Start-Process -FilePath $destLocal -WorkingDirectory $cwd -Wait
 } else {
   Write-Log "Non-interactive install complete. Run: $destLocal"
 }
