@@ -24,12 +24,14 @@ function Write-Log($msg) { Write-Host "==> $msg" }
 function Die($msg) { Write-Error "error: $msg"; exit 1 }
 
 function Test-Interactive {
+  # irm|iex always redirects stdin - do NOT require !IsInputRedirected.
+  # Start when this is a real user session unless CI/NO_START opts out.
   if ($env:LOGAN_INSTALL_NO_START -eq "1") { return $false }
   if ($env:CI -or $env:NONINTERACTIVE) { return $false }
   try {
-    return [Environment]::UserInteractive -and -not [Console]::IsInputRedirected
+    return [Environment]::UserInteractive
   } catch {
-    return $false
+    return $true
   }
 }
 
@@ -88,6 +90,52 @@ function Ensure-Rust {
   if (-not (Get-Command cargo -ErrorAction SilentlyContinue)) {
     Die "cargo still missing after rustup. Open a new PowerShell and re-run."
   }
+}
+
+function Ensure-Protoc {
+  if ($env:PROTOC -and (Test-Path $env:PROTOC)) {
+    Write-Log "protoc: $env:PROTOC"
+    return
+  }
+  if (Get-Command protoc -ErrorAction SilentlyContinue) {
+    Write-Log "protoc: $(protoc --version)"
+    return
+  }
+  # Prefer repo-vendored protoc after clone (Unix binary may not run on Windows)
+  Write-Log "protoc missing - trying winget/choco, then GitHub zip…"
+  if (Get-Command winget -ErrorAction SilentlyContinue) {
+    try {
+      winget install --id Google.Protobuf -e --accept-source-agreements --accept-package-agreements | Out-Null
+    } catch { }
+  }
+  if (Get-Command choco -ErrorAction SilentlyContinue) {
+    try { choco install protoc -y | Out-Null } catch { }
+  }
+  $env:Path = [Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [Environment]::GetEnvironmentVariable("Path", "User")
+  if (Get-Command protoc -ErrorAction SilentlyContinue) {
+    Write-Log "protoc: $(protoc --version)"
+    return
+  }
+  # Official protoc release zip (win64)
+  $tag = "v28.3"
+  $ver = "28.3"
+  $url = "https://github.com/protocolbuffers/protobuf/releases/download/$tag/protoc-$ver-win64.zip"
+  $tools = Join-Path $LoganHome "tools\protoc"
+  Ensure-Dir $tools
+  $zip = Join-Path $env:TEMP "protoc-win64.zip"
+  try {
+    Invoke-WebRequest -Uri $url -OutFile $zip
+    Expand-Archive -Path $zip -DestinationPath $tools -Force
+  } catch {
+    Die "protoc is required to build Logan and could not be installed automatically. Install protoc (https://github.com/protocolbuffers/protobuf/releases) and re-run, or set `$env:PROTOC to protoc.exe. Detail: $_"
+  }
+  $protocExe = Join-Path $tools "bin\protoc.exe"
+  if (-not (Test-Path $protocExe)) {
+    Die "protoc download finished but $protocExe is missing. Install protoc manually and re-run."
+  }
+  $env:PROTOC = $protocExe
+  $env:Path = "$(Join-Path $tools 'bin');$env:Path"
+  Write-Log "protoc ready: $env:PROTOC"
 }
 
 function Try-Prebuilt {
@@ -202,6 +250,7 @@ if ($pre -and (Test-Path $pre)) {
     $binSrc = $release
   } else {
     Ensure-Rust
+    Ensure-Protoc
     Write-Log "Building Logan release (can take several minutes)…"
     Push-Location $repo
     try {
@@ -209,7 +258,9 @@ if ($pre -and (Test-Path $pre)) {
     } finally {
       Pop-Location
     }
-    if (-not (Test-Path $release)) { Die "build finished but $release missing" }
+    if (-not (Test-Path $release)) {
+      Die "build finished but $release missing. If cargo failed on protoc, install protoc or set `$env:PROTOC."
+    }
     $binSrc = $release
   }
 }

@@ -35,11 +35,25 @@ need_cmd() {
 }
 
 is_interactive() {
-  # Auto-start only when a real TUI would make sense.
+  # Auto-start when the user is at a real terminal.
+  # curl|bash pipes stdin (not a TTY) but stdout/controlling tty still are -
+  # so do NOT require -t 0. Prefer -t 1 (stdout) or a usable /dev/tty.
   if [[ "${LOGAN_INSTALL_NO_START:-}" == "1" ]]; then return 1; fi
   if [[ -n "${CI:-}" || -n "${NONINTERACTIVE:-}" ]]; then return 1; fi
-  if [[ ! -t 0 || ! -t 1 ]]; then return 1; fi
-  return 0
+  if [[ -t 1 ]]; then return 0; fi
+  if [[ -r /dev/tty && -w /dev/tty ]]; then return 0; fi
+  return 1
+}
+
+# Optional probe entry for tests: LOGAN_INSTALL_PROBE=is_interactive
+# prints "yes"/"no" and exits without installing.
+maybe_probe() {
+  case "${LOGAN_INSTALL_PROBE:-}" in
+    is_interactive)
+      if is_interactive; then echo yes; else echo no; fi
+      exit 0
+      ;;
+  esac
 }
 
 os_arch() {
@@ -226,15 +240,24 @@ try_prebuilt_release() {
 }
 
 resolve_repo_root() {
-  # Prefer explicit src, then script-relative repo, then clone cache.
+  # Prefer explicit src, then (only when run as a real file) local checkout,
+  # then clone into LOGAN_INSTALL_DIR. curl|bash is always treated as piped:
+  # never grab a random cwd that happens to contain Cargo.toml.
   if [[ -n "${LOGAN_INSTALL_SRC:-}" && -f "${LOGAN_INSTALL_SRC}/Cargo.toml" ]]; then
     REPO_ROOT="$(cd "${LOGAN_INSTALL_SRC}" && pwd)"
     log "Using LOGAN_INSTALL_SRC=${REPO_ROOT}"
     return 0
   fi
-  # When executed from a real file in the repo (not `curl | bash`)
+
   local src_file="${BASH_SOURCE[0]:-}"
-  if [[ -n "${src_file}" && "${src_file}" != "bash" && -f "${src_file}" ]]; then
+  local piped=0
+  # Piped install: stdin not a TTY, or script path is not a real file on disk.
+  if [[ ! -t 0 ]] || [[ -z "${src_file}" || "${src_file}" == "bash" || ! -f "${src_file}" ]]; then
+    piped=1
+  fi
+
+  if [[ "${piped}" -eq 0 ]]; then
+    # `bash scripts/install-logan.sh` from a checkout - use that tree.
     local here
     here="$(cd "$(dirname "${src_file}")/.." 2>/dev/null && pwd || true)"
     if [[ -n "${here}" && -f "${here}/Cargo.toml" ]]; then
@@ -242,12 +265,15 @@ resolve_repo_root() {
       log "Using local checkout ${REPO_ROOT}"
       return 0
     fi
+    if [[ -f ./Cargo.toml ]] && grep -q 'xai-grok-pager-bin\|logan' ./Cargo.toml 2>/dev/null; then
+      REPO_ROOT="$(pwd)"
+      log "Using cwd checkout ${REPO_ROOT}"
+      return 0
+    fi
+  else
+    log "Piped/bootstrap install - will clone into ${LOGAN_INSTALL_DIR}"
   fi
-  if [[ -f ./Cargo.toml ]] && grep -q 'xai-grok-pager-bin\|logan' ./Cargo.toml 2>/dev/null; then
-    REPO_ROOT="$(pwd)"
-    log "Using cwd checkout ${REPO_ROOT}"
-    return 0
-  fi
+
   # Clone or update into install dir
   ensure_git
   mkdir -p "$(dirname "${LOGAN_INSTALL_DIR}")"
@@ -264,6 +290,7 @@ resolve_repo_root() {
   fi
   [[ -f "${LOGAN_INSTALL_DIR}/Cargo.toml" ]] || die "clone failed: no Cargo.toml in ${LOGAN_INSTALL_DIR}"
   REPO_ROOT="${LOGAN_INSTALL_DIR}"
+  log "Using cloned tree ${REPO_ROOT}"
 }
 
 build_from_source() {
@@ -446,11 +473,17 @@ main() {
 
   if is_interactive; then
     log "Starting Logan…"
-    exec "${LOCAL_BIN}/logan"
+    # Reattach stdin to the controlling terminal after curl|bash pipe install.
+    if [[ -r /dev/tty && -w /dev/tty ]]; then
+      exec "${LOCAL_BIN}/logan" </dev/tty >/dev/tty 2>&1
+    else
+      exec "${LOCAL_BIN}/logan"
+    fi
   else
     log "Non-interactive install complete (no TUI start)."
     log "Run: ${LOCAL_BIN}/logan"
   fi
 }
 
+maybe_probe
 main "$@"
