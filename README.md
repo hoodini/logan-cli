@@ -4,11 +4,14 @@
 
 # Logan
 
-**A coding agent in your terminal** - with **token visibility**, and an **opt-in library** of modes + creative skills (HyperFrames, scrub landings, yuvai-thinking).
+**A coding agent in your terminal.**  
+Shows every token you spend. Skills and modes are **opt-in** - you compose the agent.
 
 By [Yuval Avidani (YUV.AI)](https://yuv.ai) · inspired by Wolverine · fork of [xAI Grok Build](https://github.com/xai-org/grok-build) (Apache-2.0)
 
-> **Default is empty and clean.** Skills and modes are **off** until you add them. You compose Logan: add packs, remove packs, toggle `/think` / `/caveman` yourself.
+> **Default is empty and clean.**  
+> Active skills start empty. Modes start off. No forced HyperFrames, no forced yuvai-thinking, no forced caveman.  
+> You add what you want - and remove it anytime.
 
 ---
 
@@ -26,22 +29,24 @@ curl -fsSL https://raw.githubusercontent.com/hoodini/logan-cli/main/scripts/inst
 irm https://raw.githubusercontent.com/hoodini/logan-cli/main/scripts/install-logan.ps1 | iex
 ```
 
-That single command gets Logan, puts it on your PATH, seeds skills + modes, sets up `~/.logan`, and starts the app.
+That puts `logan` on your PATH, creates `~/.logan`, refreshes the **skill catalog** (library only), and starts the app.  
+**It does not auto-enable skills or modes.**
 
 <p align="center">
-  <img src="docs/assets/infographic-one-command-install.jpg" alt="Logan one-command install: paste, login, code" width="100%"/>
+  <img src="docs/assets/infographic-one-command-install.jpg" alt="Logan one-command install" width="100%"/>
 </p>
 
 ### Login
 
 ```bash
-logan login                 # browser - xAI user account (same idea as Grok Build)
-logan login --from-grok     # reuse ~/.grok/auth.json if you already use Grok Build
+logan login                 # browser - xAI user account
+logan login --from-grok     # reuse ~/.grok/auth.json if Grok Build is already signed in
 # or: export XAI_API_KEY="your-key"
 logan
 ```
 
-**Which credential wins?** Per-model `api_key`/`env_key` (Claude, OpenAI, Ollama, ...) always wins for that model. Grok session / import is for **default xAI** models. See [docs/SETUP.md](docs/SETUP.md#auth-vs-which-llm-you-use).
+**Which credential wins?** Per-model `api_key` / `env_key` always wins for that model.  
+Session / Grok import is for default xAI models. See [docs/SETUP.md](docs/SETUP.md#auth-vs-which-llm-you-use).
 
 ---
 
@@ -49,19 +54,15 @@ logan
 
 | You type | What you get |
 | --- | --- |
-| `hi` | Chat |
+| `hi` | Chat (plain coding agent) |
 | `/stats` | Tokens: input / output / cache / $ |
 | `/context deep` | Real system prompt + messages |
 | `/goal Fix the bug` | Long multi-step work |
-| `/skills catalog` | See optional skills (not installed yet) |
-| `/skills add pack modes` | Install caveman / think / ponytail / whoami |
-| `/skills add pack creative` | Install HyperFrames + scrub + reels |
-| `/think full` | Deep explain - only after `yuvai-thinking` is installed |
-| `/caveman full` | Terse talk - only after `caveman` is installed |
-| `/site mouse clip.mp4` | Scrub landing - after creative pack |
-| `/reel clip.mp4` | Captioned reel - after creative pack |
-| `/whoami grill` | Optional identity interview |
-| `/improve` | Optional self-heal dashboard |
+| `/skills catalog` | Optional library (not installed yet) |
+| `/skills list` | What **you** installed (starts empty) |
+| `/skills add pack modes` | Opt-in: caveman, think, ponytail, whoami, self-improve |
+| `/skills add pack creative` | Opt-in: HyperFrames, scrub landings, reels |
+| `/skills remove <name>` | Drop a skill you no longer want |
 
 Bottom bar after each reply:
 
@@ -70,27 +71,28 @@ m grok-4.5 · 24K/200K 12% · in 2.4K out 180 c 1.2K
 ```
 
 <p align="center">
-  <img src="docs/assets/infographic-token-visibility.jpg" alt="Logan token visibility: live bar, /stats, /context deep" width="100%"/>
+  <img src="docs/assets/infographic-token-visibility.jpg" alt="Logan token visibility" width="100%"/>
 </p>
 
 ---
 
-## Opt-in skills (empty by default)
+## You compose the agent (empty by default)
 
-Install puts skills in a **catalog**, not into your active set:
-
-```text
-~/.logan/catalog/skills/   # library (available)
-~/.logan/skills/           # active (starts empty - you add)
-```
+| Path | Role |
+| --- | --- |
+| `~/.logan/skills/` | **Active** skills - starts **empty** |
+| `~/.logan/catalog/skills/` | **Library** from install - available, not forced |
+| `~/.logan/modes.toml` | Modes - all **off** until you enable them |
 
 ```text
 /skills catalog
-/skills add pack modes       # thinking + caveman + ponytail + whoami + improve
-/skills add pack creative    # HyperFrames + scrub landings + reels
-/skills add yuvai-thinking   # one skill
-/skills remove caveman       # your agent, your choice
+/skills add pack modes
+/skills add pack creative
+/skills add yuvai-thinking
+/skills remove video-edit
 ```
+
+Bare `/skills` opens the skills modal. With args, it manages the catalog.
 
 ### Thinking is not prebaked
 
@@ -98,36 +100,49 @@ Install puts skills in a **catalog**, not into your active set:
 | --- | --- |
 | 1. Install skill | `/skills add yuvai-thinking` |
 | 2. Turn mode on | `/think full` |
-| 3. Turn off | `/think off` or `/skills remove yuvai-thinking` |
+| 3. Turn off | `/think off` |
+| 4. Uninstall | `/skills remove yuvai-thinking` |
 
-Without that, Logan is a normal coding agent - no forced teach-every-crumb style.
+Without that, Logan does **not** run the "every crumb" teach style.
 
-### Creative pack (after you opt in)
+### Creative pack (only after you opt in)
 
-| Intent | Command |
-| --- | --- |
-| Mouse-scrub landing | `/site mouse video.mp4` |
-| Scroll-scrub parallax | `/site parallax video.mp4` |
-| Apple sticky scroll | `/site scroll video.mp4` |
-| Captioned reel | `/reel video.mp4` |
-| Stack map | `/creative` |
+```text
+/skills add pack creative
+```
+
+| Intent | Command | Skill |
+| --- | --- | --- |
+| Mouse-scrub landing | `/site mouse video.mp4` | `cinematic-scrub-landing` |
+| Scroll-scrub parallax | `/site parallax video.mp4` | `parallax-landing-page` |
+| Apple sticky scroll | `/site scroll video.mp4` | `video-to-landing-page` |
+| Captioned reel | `/reel video.mp4` | `video-edit` |
+| Stack map | `/creative` | shows installed vs catalog |
+
+If a skill is missing, Logan tells you how to add it - it does not invent the stack silently.
 
 Full map: **[docs/CREATIVE.md](docs/CREATIVE.md)** · modes: **[docs/MODES.md](docs/MODES.md)** · catalog: **[skills/README.md](skills/README.md)**
 
 Also: [hoodini/ai-agents-skills](https://github.com/hoodini/ai-agents-skills) · [HyperFrames](https://github.com/heygen-com/hyperframes)
 
----
+### Modes (off until you enable)
 
-## Modes (also off by default)
-
-| Mode | Command | Needs skill |
+| Mode | Command | Needs skill first |
 | --- | --- | --- |
 | Think | `/think off\|lite\|full\|ultra` | `yuvai-thinking` |
 | Caveman | `/caveman off\|lite\|full\|ultra` | `caveman` |
 | Ponytail | `/ponytail off\|lite\|full\|ultra` | `ponytail` |
 | Status | `/modes` | - |
 
-**`/think` and `/caveman` are exclusive.** Enabling a mode without the skill installed fails with a clear `/skills add …` hint.
+**`/think` and `/caveman` are exclusive** (deep explain vs terse talk).  
+Enabling a mode without the skill installed fails with a clear `/skills add …` hint.
+
+### Optional power-user install flags
+
+```bash
+LOGAN_SEED_SKILLS=1 …              # install entire catalog into active skills (not default)
+LOGAN_SYNC_SIBLING_SKILLS=1 …      # also copy from ~/.claude / ~/.grok skills
+```
 
 ---
 
@@ -136,7 +151,7 @@ Also: [hoodini/ai-agents-skills](https://github.com/hoodini/ai-agents-skills) ·
 | Promise | How |
 | --- | --- |
 | Never fly blind on cost | Live `in/out/c` bar + colorful `/stats` |
-| See the real prompt | `/context deep` reads system prompt + history text |
+| See the real prompt | `/context deep` |
 | Install without a thesis | One paste on macOS, Linux, Windows |
 | You compose the agent | Empty skills by default - add/remove packs |
 | Creative when you want it | Opt-in HyperFrames + scrub + reels |
@@ -157,7 +172,7 @@ We compared Logan to **GitHub Copilot**, **Claude Code**, **Cursor**, **Hermes**
 Full write-up: **[docs/SWOT.md](docs/SWOT.md)**
 
 <p align="center">
-  <img src="docs/assets/infographic-competitive-map.jpg" alt="Logan competitive map vs Copilot, Claude Code, Cursor, Hermes, OpenClaw" width="100%"/>
+  <img src="docs/assets/infographic-competitive-map.jpg" alt="Logan competitive map" width="100%"/>
 </p>
 
 <p align="center">
@@ -168,12 +183,13 @@ Full write-up: **[docs/SWOT.md](docs/SWOT.md)**
 | --- | --- | --- |
 | GitHub Copilot | IDE + GitHub org | Open terminal agent + token deep-dive |
 | Claude Code | Anthropic coding agent | Multi-LLM + `/context deep` + install UX |
-| Cursor | AI IDE | Headless/TUI agent + cost clarity + creative stack |
+| Cursor | AI IDE | Headless/TUI + cost clarity + opt-in creative pack |
 | Hermes | Learning personal agent | Code harness + spend visibility |
 | OpenClaw | Life/skills automation | Repo-first coding + context text audit |
-| **Logan** | **Transparent creative coding CLI** | **Tokens · one command · HyperFrames · scrub sites · /think** |
+| **Logan** | **Transparent coding CLI you compose** | **Tokens · empty-by-default skills · opt-in packs** |
 
-We do **not** claim Copilot/Cursor IDE parity. We claim: **never fly blind on tokens**, **install in one paste**, **ship cinematic product work**, **stay open**.
+We do **not** claim Copilot/Cursor IDE parity.  
+We claim: **never fly blind on tokens**, **install in one paste**, **you own the skill set**, **stay open**.
 
 ---
 
@@ -199,7 +215,13 @@ irm https://raw.githubusercontent.com/hoodini/logan-cli/main/scripts/install-log
 
 Then: logan --version
 If needed: logan login  (or logan login --from-grok if Grok Build is already signed in)
-Tell the user: run logan, then try /stats, /creative, /site, /think full
+
+Important defaults:
+- Active skills start EMPTY. Catalog is available but not enabled.
+- Do NOT claim thinking/creative modes are pre-enabled.
+- User opts in: /skills catalog · /skills add pack modes · /skills add pack creative
+- Then optional: /think full · /caveman full · /site · /reel
+Tell the user to start with /stats and /skills catalog.
 ```
 
 ---
@@ -207,7 +229,7 @@ Tell the user: run logan, then try /stats, /creative, /site, /think full
 ## How a prompt becomes work
 
 <p align="center">
-  <img src="docs/assets/infographic-prompt-journey.jpg" alt="Logan prompt journey from request to tools to result" width="100%"/>
+  <img src="docs/assets/infographic-prompt-journey.jpg" alt="Logan prompt journey" width="100%"/>
 </p>
 
 ---
@@ -217,16 +239,14 @@ Tell the user: run logan, then try /stats, /creative, /site, /think full
 | Doc | For |
 | --- | --- |
 | [docs/START_HERE.md](docs/START_HERE.md) | Super short |
-| [docs/CREATIVE.md](docs/CREATIVE.md) | HyperFrames + scrub landings + reels |
-| [docs/MODES.md](docs/MODES.md) | Caveman / ponytail / think / whoami / improve |
+| [docs/MODES.md](docs/MODES.md) | Modes + empty-by-default skills |
+| [docs/CREATIVE.md](docs/CREATIVE.md) | Opt-in HyperFrames / scrub / reels |
+| [skills/README.md](skills/README.md) | Catalog of optional skills |
 | [docs/SWOT.md](docs/SWOT.md) | Competitive SWOT |
 | [docs/TOKEN_VISIBILITY.md](docs/TOKEN_VISIBILITY.md) | Tokens explained |
-| [docs/BENCHMARK.md](docs/BENCHMARK.md) | Grok Build vs Logan tests |
 | [docs/SETUP.md](docs/SETUP.md) | Extra config |
 | [docs/FEATURES.md](docs/FEATURES.md) | Full list |
-| [docs/assets/README.md](docs/assets/README.md) | Image sources |
-| [skills/README.md](skills/README.md) | Native skills |
-| [examples/showcase/](examples/showcase/) | Golden creative paths |
+| [examples/showcase/](examples/showcase/) | Golden creative paths (after opt-in) |
 
 ---
 
