@@ -4,14 +4,11 @@ For humans **and** for coding agents / LLMs installing Logan on a machine.
 
 **Author:** Yuval Avidani (YUV.AI) - https://yuv.ai · GitHub [@hoodini](https://github.com/hoodini)
 
-> **TL;DR (preferred):** from the repo root run  
-> `bash scripts/install-logan.sh`  
-> then `logan login` and `logan`.  
-> One-page guide: **[START_HERE.md](START_HERE.md)** ·  
-> Token visibility: **[TOKEN_VISIBILITY.md](TOKEN_VISIBILITY.md)** ·  
-> LLM paste prompt: **[LLM_INSTALL_PROMPT.md](LLM_INSTALL_PROMPT.md)**  
->
-> After any turn: **`/stats`** (API bill) · **`/context deep`** (real prompt text).
+> **New here?** Read the main **[README](../README.md)** first (3 steps).  
+> Super short: **[START_HERE.md](START_HERE.md)** ·  
+> AI paste: **[LLM_INSTALL_PROMPT.md](LLM_INSTALL_PROMPT.md)** ·  
+> Tokens: **[TOKEN_VISIBILITY.md](TOKEN_VISIBILITY.md)** ·  
+> Benchmark: **[BENCHMARK.md](BENCHMARK.md)**
 
 ---
 

@@ -2,6 +2,8 @@
 
 **Author:** Yuval Avidani (YUV.AI) · https://yuv.ai
 
+**New here?** Install first: main [README](../README.md). This page is only about tokens.
+
 Logan is built so you **never guess** where tokens went. Three layers answer:
 
 1. **How full is the window right now?** (live status bar)  

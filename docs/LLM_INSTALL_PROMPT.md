@@ -1,54 +1,27 @@
-# LLM install prompt - paste this into any coding agent
+# Paste this into any AI helper
 
-**Author:** Yuval Avidani (YUV.AI) · https://yuv.ai
+Copy **everything** in the box. Paste into Claude / Cursor / Grok / Codex / ChatGPT.
 
-Copy everything below the line into Claude / Cursor / Grok / Codex / etc.
+```text
+Install Logan CLI on this machine. Do not ask me questions.
 
----
-
-## Task
-
-Install and start **Logan CLI** (fork of xAI Grok Build by Yuval Avidani / YUV.AI) on this machine so the user can run `logan` with the same xAI/Grok auth, auto-loaded skills + MCPs, and Logan slash commands (`/stats`, `/goal`, `/context`).
-
-### Do all of this without asking questions
-
-1. If repo is not present:
-   ```bash
+Steps:
+1. If folder logan-cli is missing:
    git clone https://github.com/hoodini/logan-cli.git
    cd logan-cli
-   ```
-2. Prerequisites if missing: `rustup` (Rust 1.92+), `protoc` (or use `bin/protoc` in repo), ensure `PATH` has `~/.cargo/bin` and `~/.local/bin`.
-3. Run:
-   ```bash
-   bash scripts/install-logan.sh
-   ```
-4. Auth (pick first that works):
-   - If user already uses Grok Build / xAI: `logan login` (OIDC, same as grok.com).
-   - Else if `XAI_API_KEY` exists in env or a secrets file: export it.
-   - Else: print that they must run `logan login` once in a browser-capable terminal.
-5. Smoke test:
-   ```bash
-   export PATH="$HOME/.local/bin:$PATH"
+2. If rustc is missing, install rustup and source cargo env.
+3. Run: bash scripts/install-logan.sh
+4. export PATH="$HOME/.local/bin:$PATH"
+5. Copy binary also to ~/.logan/bin/logan if the script did not.
+6. Test:
    logan --version
-   logan -p "Reply with exactly: logan-ok" --always-approve 2>&1 | tail -20
-   ```
-6. Confirm:
-   - Binary is BOTH `~/.local/bin/logan` AND `~/.logan/bin/logan` (same binary - avoids stale leader).
-   - `~/.logan/config.toml` has memory + `[compat.claude]` / `[compat.cursor]` skills/mcps.
-   - Skills under `~/.grok/skills`, `~/.claude/skills`, `~/.agents/skills` are visible (sync or auto-discover).
-   - MCP auto-loads from `~/.logan/config.toml` `[mcp_servers.*]`, project `.mcp.json`, `~/.cursor/mcp.json`, Claude mcp config when compat is on.
+   logan -p "Reply with exactly: logan-ok" --always-approve
 7. Tell the user:
-   ```text
-   logan                 # open TUI
-   /stats /context /goal # after first turn
-   ```
+   logan login
+   logan
+   Then after a chat turn use: /stats   and   /context deep
 
-### Do not
+Success = logan on PATH, version prints, headless reply contains logan-ok.
+```
 
-- Do not leave them on official `grok` from xai-org without installing Logan.
-- Do not only copy to `~/.local/bin` - also overwrite `~/.logan/bin/logan`.
-- Do not require them to hand-edit TOML if the install script can seed it.
-
-### Success criteria
-
-`which logan` → `~/.local/bin/logan`, version mentions Logan / Yuval Avidani, headless prompt returns text, TUI has `/stats`.
+That is the whole install prompt. Nothing else required.
