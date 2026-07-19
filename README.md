@@ -34,6 +34,8 @@ irm https://raw.githubusercontent.com/hoodini/logan-cli/main/scripts/install-log
 That puts `logan` on your PATH, creates `~/.logan`, refreshes the **skill catalog** (library only), and starts the app.  
 **It does not auto-enable skills or modes.**
 
+**Windows prerequisites:** building Logan needs the MSVC linker + C runtime libs — install **Visual Studio Build Tools** with the **"Desktop development with C++"** workload (`winget install Microsoft.VisualStudio.2022.BuildTools --override "--add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --passive"`). Rust, git, and protoc are bootstrapped automatically. The installer scans every Visual Studio on the machine and picks the newest one with a **complete** C++ toolset — a VS install that ships the compiler without the desktop libs (e.g. onecore-only) is skipped instead of breaking the build. Running `install-logan.sh` from Git Bash also works: it hands off to the PowerShell installer.
+
 <p align="center">
   <img src="docs/assets/infographic-one-command-install.jpg" alt="Logan one-command install" width="100%"/>
 </p>
@@ -85,6 +87,30 @@ logan update
 If an old binary still tries to download "Grok 0.2.x", run the curl install line once to replace it.
 
 > After any update, restart Logan so the new binary is loaded.
+
+---
+
+## Install troubleshooting
+
+**Windows: `LINK : fatal error LNK1104: cannot open file 'libcmt.lib'` (repeated for many crates)**  
+A Visual Studio on your machine has the C++ *compiler* but not the desktop C runtime *libraries* — typically after installing/upgrading to a new VS whose C++ component only includes `onecore` libs. Rust auto-picks the newest VS, so every link fails. The installer now detects this and imports the environment of the newest **complete** MSVC toolset instead. If it reports that *no* complete toolset exists, open the Visual Studio Installer and add **"Desktop development with C++"** (or run the `winget` line from the Windows install section), then re-run the one-liner.
+
+**Windows: `LINK : fatal error LNK1318: Unexpected PDB error; LIMIT (12)` on the final `logan.exe` link**  
+The MSVC 14.44 linker (VS 2022 17.14) has a PDB-writer defect that can kill the final link of very large Rust binaries — Logan crossed the trigger threshold as the workspace grew. The installer now detects LNK1318 and automatically relinks with `/DEBUG:NONE` (no PDB; the exe is identical, you just lose local debug symbols). If you build manually, either link with a VS 2019 (14.29) toolset — which handles it fine — or run:  
+`cargo rustc -p xai-grok-pager-bin --release --bin logan -- -Clink-arg=/DEBUG:NONE`  
+The installer also builds with `CARGO_INCREMENTAL=0` (matching CI) to save disk and reduce PDB pressure.
+
+**Windows: `Copy-Item: Cannot find path '…Your branch is up to date…\target\release\logan.exe'` on a re-run**  
+Fixed — older installer versions leaked `git pull` output into the resolved repo path on second and later runs. Re-run the one-liner to get the fixed script.
+
+**`logan --version` is old after an update**  
+Fixed — older installer versions reinstalled a previously built (stale) binary after `git pull`. The installer now rebuilds whenever the binary is older than the checked-out commit. `LOGAN_FORCE_BUILD=1` forces a rebuild regardless.
+
+**The install window closes / TUI doesn't start after install (Windows)**  
+Fixed — the post-install launch used a `Start-Process` parameter that doesn't exist (`-UseShellExecute`), which threw at the very end of the install. Logan now starts in a new console window. Your install was still fine; only the auto-start failed.
+
+**Errors on `bash scripts/install-logan.sh` from Git Bash on Windows**  
+The bash installer now delegates to `install-logan.ps1` automatically — use either one-liner.
 
 ---
 
