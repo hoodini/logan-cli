@@ -714,7 +714,8 @@ pub fn run_skills_manage(trimmed: &str) -> CommandResult {
 
 fn add_pack(pack: &str) -> CommandResult {
     let names: &[&str] = match pack.to_ascii_lowercase().as_str() {
-        "creative" | "video" | "scrub" => &[
+        "creative" | "video" | "scrub" | "design" => &[
+            "yuv-design-dna",
             "hyperframes-master",
             "cinematic-scrub-landing",
             "parallax-landing-page",
