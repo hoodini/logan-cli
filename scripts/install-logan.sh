@@ -279,9 +279,11 @@ resolve_repo_root() {
   mkdir -p "$(dirname "${LOGAN_INSTALL_DIR}")"
   if [[ -d "${LOGAN_INSTALL_DIR}/.git" ]]; then
     log "Updating ${LOGAN_INSTALL_DIR} (${LOGAN_REF})…"
-    git -C "${LOGAN_INSTALL_DIR}" fetch --depth 1 origin "${LOGAN_REF}" || git -C "${LOGAN_INSTALL_DIR}" fetch origin
-    git -C "${LOGAN_INSTALL_DIR}" checkout -q "${LOGAN_REF}" 2>/dev/null || true
-    git -C "${LOGAN_INSTALL_DIR}" pull --ff-only origin "${LOGAN_REF}" 2>/dev/null || true
+    # Managed clone: local edits must never block updates (checkout+pull
+    # refuses silently on a dirty tree, leaving a stale source). Fetch the
+    # ref and hard-reset to exactly what origin has.
+    git -C "${LOGAN_INSTALL_DIR}" fetch --depth 1 origin "${LOGAN_REF}" || git -C "${LOGAN_INSTALL_DIR}" fetch origin "${LOGAN_REF}" || true
+    git -C "${LOGAN_INSTALL_DIR}" reset --hard FETCH_HEAD 2>/dev/null || true
   else
     log "Cloning ${LOGAN_REPO} → ${LOGAN_INSTALL_DIR}…"
     rm -rf "${LOGAN_INSTALL_DIR}"

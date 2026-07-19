@@ -129,6 +129,11 @@ grep -q 'maybe_delegate_windows' "${SH}" && grep -q 'install-logan.ps1' "${SH}" 
   && pass "sh delegates Windows installs to install-logan.ps1" \
   || fail "sh missing Windows delegation to install-logan.ps1"
 
+# ps1 must survive replacing a RUNNING logan.exe (rename-aside, not delete)
+awk '/function Install-Binary/,/^}/' "${PS1}" | grep -q 'old\.' \
+  && pass "ps1 Install-Binary renames running exe aside" \
+  || fail "ps1 Install-Binary cannot replace a running exe"
+
 # Installer builds must be non-incremental (disk + MSVC PDB pressure)
 grep -q 'CARGO_INCREMENTAL' "${PS1}" && grep -q 'CARGO_INCREMENTAL=0' "${SH}" \
   && pass "installer builds set CARGO_INCREMENTAL=0" \

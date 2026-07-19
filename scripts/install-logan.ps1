@@ -89,7 +89,22 @@ function Install-Binary($src, $dest) {
   Ensure-Dir (Split-Path $dest -Parent)
   $tmp = "$dest.new.$PID"
   Copy-Item -Force $src $tmp
-  Move-Item -Force $tmp $dest
+  try {
+    Move-Item -Force $tmp $dest -ErrorAction Stop
+  } catch {
+    # Dest is a RUNNING exe: Windows cannot delete an executing image, but it
+    # CAN be renamed. Rename it aside, place the new binary, and let the
+    # running instance keep its old image until the user restarts Logan.
+    $aside = "$dest.old.$PID"
+    Move-Item -Force $dest $aside
+    Move-Item -Force $tmp $dest
+    Write-Log "Logan is running - installed new binary; restart Logan to load it"
+  }
+  # Sweep leftovers from earlier running-exe replacements. Deleting one that
+  # is still executing fails harmlessly; it gets cleaned on a later install.
+  Get-ChildItem -Path "$dest.old.*" -ErrorAction SilentlyContinue | ForEach-Object {
+    try { Remove-Item $_.FullName -Force -ErrorAction Stop } catch { }
+  }
 }
 
 function Ensure-Git {
@@ -281,9 +296,11 @@ function Resolve-Repo {
   # to the returned path and corrupt every Join-Path downstream.
   if (Test-Path (Join-Path $InstallDir ".git")) {
     Write-Log "Updating $InstallDir…"
+    # Managed clone: local edits must never block updates (checkout+pull
+    # refuses silently on a dirty tree, leaving a stale source). Fetch the
+    # ref and hard-reset to exactly what origin has.
     git -C $InstallDir fetch --depth 1 origin $LoganRef 2>$null | Out-Null
-    git -C $InstallDir checkout $LoganRef 2>$null | Out-Null
-    git -C $InstallDir pull --ff-only origin $LoganRef 2>$null | Out-Null
+    git -C $InstallDir reset --hard FETCH_HEAD 2>$null | Out-Null
   } else {
     Write-Log "Cloning $LoganRepo → $InstallDir…"
     if (Test-Path $InstallDir) { Remove-Item -Recurse -Force $InstallDir }
