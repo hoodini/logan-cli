@@ -56,18 +56,22 @@ if grep -q 'IsInputRedirected' "${PS1}"; then
 else
   pass "ps1 does not use IsInputRedirected"
 fi
-# Free-console contract: one function owns Start-Process + UseShellExecute $true
+# Free-console contract: one function owns the Start-Process new-console launch
 if grep -q 'function Start-LoganFreeConsole' "${PS1}"; then
   pass "ps1 Start-LoganFreeConsole function exists"
 else
   fail "ps1 missing Start-LoganFreeConsole function"
 fi
-# Function body must hardcode full free-console contract (PS 6+/7 defaults false)
-if awk '/function Start-LoganFreeConsole/,/^}/' "${PS1}" | grep -q 'Start-Process' \
-  && awk '/function Start-LoganFreeConsole/,/^}/' "${PS1}" | grep -qE 'UseShellExecute\s+\$true'; then
-  pass "ps1 free-console body has Start-Process + UseShellExecute \$true"
+# Body must use Start-Process WITHOUT -NoNewWindow (new console detaches from
+# the irm pipe) and must NOT pass -UseShellExecute: that is a ProcessStartInfo
+# property, not a Start-Process parameter - passing it throws at runtime.
+_body="$(awk '/function Start-LoganFreeConsole/,/^}/' "${PS1}")"
+if echo "${_body}" | grep -q 'Start-Process' \
+  && ! echo "${_body}" | grep -q 'NoNewWindow' \
+  && ! echo "${_body}" | grep -qE 'Start-Process.*UseShellExecute'; then
+  pass "ps1 free-console body: Start-Process, no -NoNewWindow, no -UseShellExecute param"
 else
-  fail "ps1 Start-LoganFreeConsole missing Start-Process or UseShellExecute \$true"
+  fail "ps1 Start-LoganFreeConsole must use Start-Process without -NoNewWindow/-UseShellExecute"
 fi
 # Interactive branch must call the free-console function (not bare &)
 if grep -A6 'if (Test-Interactive)' "${PS1}" | grep -q 'Start-LoganFreeConsole'; then
@@ -86,26 +90,54 @@ fi
 # Drive SHIPPED free-console contract via probe (no reimplementation)
 if command -v pwsh >/dev/null 2>&1; then
   probe_out="$(LOGAN_INSTALL_PROBE=start_command pwsh -NoProfile -File "${PS1}" 2>/dev/null | tr -d '\r' | tail -1)"
-  if echo "${probe_out}" | grep -q 'start=Start-Process' && echo "${probe_out}" | grep -q 'UseShellExecute=true'; then
+  if echo "${probe_out}" | grep -q 'start=Start-Process' && echo "${probe_out}" | grep -q 'NewConsole=true'; then
     pass "shipped ps1 probe start_command => ${probe_out}"
   else
     fail "shipped ps1 probe start_command unexpected: '${probe_out}'"
   fi
 elif command -v powershell >/dev/null 2>&1; then
   probe_out="$(LOGAN_INSTALL_PROBE=start_command powershell -NoProfile -File "${PS1}" 2>/dev/null | tr -d '\r' | tail -1)"
-  if echo "${probe_out}" | grep -q 'start=Start-Process' && echo "${probe_out}" | grep -q 'UseShellExecute=true'; then
+  if echo "${probe_out}" | grep -q 'start=Start-Process' && echo "${probe_out}" | grep -q 'NewConsole=true'; then
     pass "shipped ps1 probe start_command => ${probe_out}"
   else
     fail "shipped ps1 probe start_command unexpected: '${probe_out}'"
   fi
 else
   # No PowerShell on this host: still require contract string from shipped helper
-  if grep -q 'start=Start-Process;UseShellExecute=true' "${PS1}"; then
+  if grep -q 'start=Start-Process;NewConsole=true' "${PS1}"; then
     pass "ps1 embeds start contract token (no pwsh on host)"
   else
     fail "ps1 missing start contract token for probe"
   fi
 fi
+
+# --- Windows build environment (LNK1104 libcmt.lib regression) ---
+# ps1 must select a COMPLETE MSVC toolset (a VS install can ship the compiler
+# without desktop libs, e.g. onecore-only) and import its vcvars env.
+grep -q 'Ensure-MsvcBuildTools' "${PS1}" && grep -q 'libcmt.lib' "${PS1}" && grep -qi 'vcvarsall' "${PS1}" \
+  && pass "ps1 selects complete MSVC toolset (libcmt.lib check + vcvarsall import)" \
+  || fail "ps1 missing MSVC toolset selection (LNK1104 libcmt.lib guard)"
+awk '/Ensure-Rust$/{found=1} /Ensure-MsvcBuildTools/{if(found) ok=1} END{exit ok?0:1}' "${PS1}" \
+  && pass "ps1 runs MSVC check in build path" \
+  || fail "ps1 build path does not call Ensure-MsvcBuildTools"
+grep -q 'LASTEXITCODE' "${PS1}" && grep -A3 'cargo build' "${PS1}" | grep -q 'LASTEXITCODE' \
+  && pass "ps1 checks cargo build exit code" \
+  || fail "ps1 does not check cargo build exit code"
+
+# sh must hand Windows (Git Bash/MSYS/Cygwin) installs to the ps1
+grep -q 'maybe_delegate_windows' "${SH}" && grep -q 'install-logan.ps1' "${SH}" \
+  && pass "sh delegates Windows installs to install-logan.ps1" \
+  || fail "sh missing Windows delegation to install-logan.ps1"
+
+# Installer builds must be non-incremental (disk + MSVC PDB pressure)
+grep -q 'CARGO_INCREMENTAL' "${PS1}" && grep -q 'CARGO_INCREMENTAL=0' "${SH}" \
+  && pass "installer builds set CARGO_INCREMENTAL=0" \
+  || fail "installer builds missing CARGO_INCREMENTAL=0"
+
+# ps1 must fall back to a PDB-less link when MSVC 14.44 dies with LNK1318
+grep -q 'LNK1318' "${PS1}" && grep -q 'DEBUG:NONE' "${PS1}" \
+  && pass "ps1 has LNK1318 -> /DEBUG:NONE relink fallback" \
+  || fail "ps1 missing LNK1318 /DEBUG:NONE fallback"
 
 grep -q '\[compat.claude\]' "${SH}" && pass "seeds compat.claude" || fail "no compat seed"
 grep -q 'use_leader = false' "${SH}" && pass "seeds use_leader false" || fail "no use_leader seed"

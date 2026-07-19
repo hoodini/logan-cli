@@ -300,6 +300,9 @@ build_from_source() {
   (
     cd "${REPO_ROOT}"
     export PATH="${HOME}/.cargo/bin:${PATH}"
+    # One-shot installer build: incremental caches waste disk and (on MSVC
+    # hosts) explode PDB module counts (LNK1318 LIMIT). Match CI behavior.
+    export CARGO_INCREMENTAL=0
     if [[ -x "${REPO_ROOT}/bin/protoc" ]]; then
       export PROTOC="${REPO_ROOT}/bin/protoc"
     fi
@@ -478,9 +481,34 @@ MD
   fi
 }
 
+maybe_delegate_windows() {
+  # Git Bash / MSYS / Cygwin: the bash path cannot build Logan on Windows
+  # (cargo emits logan.exe, and MSVC env setup lives in the ps1). Hand the
+  # whole install to install-logan.ps1, which owns the Windows story.
+  case "$(uname -s | tr '[:upper:]' '[:lower:]')" in
+    msys*|mingw*|cygwin*) ;;
+    *) return 0 ;;
+  esac
+  log "Windows detected - delegating to install-logan.ps1 (MSVC + .exe handling)"
+  local ps="powershell.exe"
+  command -v pwsh.exe >/dev/null 2>&1 && ps="pwsh.exe"
+  local src_file="${BASH_SOURCE[0]:-}"
+  if [[ -n "${src_file}" && -f "${src_file}" ]]; then
+    local ps1_path
+    ps1_path="$(cd "$(dirname "${src_file}")" && pwd)/install-logan.ps1"
+    if [[ -f "${ps1_path}" ]]; then
+      command -v cygpath >/dev/null 2>&1 && ps1_path="$(cygpath -w "${ps1_path}")"
+      exec "${ps}" -NoProfile -ExecutionPolicy Bypass -File "${ps1_path}"
+    fi
+  fi
+  exec "${ps}" -NoProfile -ExecutionPolicy Bypass -Command \
+    "irm https://raw.githubusercontent.com/hoodini/logan-cli/main/scripts/install-logan.ps1 | iex"
+}
+
 # ---------- main ----------
 main() {
   log "Logan one-command install (YUV.AI)"
+  maybe_delegate_windows
   log "home: ${LOGAN_HOME}"
   ensure_curl_or_wget
   ensure_path_export
@@ -494,8 +522,19 @@ main() {
       :
     else
       resolve_repo_root
-      # Reuse existing release binary if already built and fresh enough
-      if [[ -x "${REPO_ROOT}/target/release/logan" && "${LOGAN_FORCE_BUILD:-}" != "1" ]]; then
+      # Reuse an existing release binary ONLY if it is newer than the
+      # checked-out HEAD commit - otherwise git pull just brought new code and
+      # reinstalling the old exe would make updates silently no-ops.
+      release_fresh=0
+      if [[ -x "${REPO_ROOT}/target/release/logan" ]]; then
+        head_time="$(git -C "${REPO_ROOT}" log -1 --format=%ct 2>/dev/null || echo 0)"
+        bin_time="$(stat -c %Y "${REPO_ROOT}/target/release/logan" 2>/dev/null \
+          || stat -f %m "${REPO_ROOT}/target/release/logan" 2>/dev/null || echo 0)"
+        if [[ "${head_time}" -eq 0 || "${bin_time}" -ge "${head_time}" ]]; then
+          release_fresh=1
+        fi
+      fi
+      if [[ "${release_fresh}" -eq 1 && "${LOGAN_FORCE_BUILD:-}" != "1" ]]; then
         log "Found existing build at ${REPO_ROOT}/target/release/logan"
         BIN_SRC="${REPO_ROOT}/target/release/logan"
       else

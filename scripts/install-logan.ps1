@@ -36,10 +36,12 @@ function Test-Interactive {
 }
 
 # Single free-console launch contract for post-install TUI start after irm|iex.
-# MUST use -UseShellExecute $true so CreateProcess does not inherit the irm pipe
-# (PS 6+/7 defaults UseShellExecute to $false).
+# Start-Process without -NoNewWindow launches the TUI in a NEW console window,
+# so it never inherits the consumed irm|iex stdin pipe. Do NOT pass
+# -UseShellExecute: that is a .NET ProcessStartInfo property, not a
+# Start-Process parameter - passing it throws "parameter cannot be found".
 function Get-LoganFreeConsoleStartContract {
-  return "start=Start-Process;UseShellExecute=true"
+  return "start=Start-Process;NewConsole=true"
 }
 
 function Start-LoganFreeConsole {
@@ -49,7 +51,7 @@ function Start-LoganFreeConsole {
   )
   # Contract token used by LOGAN_INSTALL_PROBE=start_command (tests drive this).
   $null = Get-LoganFreeConsoleStartContract
-  Start-Process -FilePath $Binary -WorkingDirectory $Cwd -Wait -UseShellExecute $true
+  Start-Process -FilePath $Binary -WorkingDirectory $Cwd -Wait
 }
 
 # Optional probes for tests (no install):
@@ -121,6 +123,81 @@ function Ensure-Rust {
   }
 }
 
+function Import-VcVarsEnv {
+  param(
+    [Parameter(Mandatory = $true)][string]$VcVarsAll,
+    [Parameter(Mandatory = $true)][string]$Arch
+  )
+  $lines = & cmd.exe /d /c "`"$VcVarsAll`" $Arch >nul 2>&1 && set"
+  if ($LASTEXITCODE -ne 0 -or -not $lines) { return $false }
+  foreach ($line in $lines) {
+    $i = $line.IndexOf('=')
+    if ($i -gt 0) {
+      Set-Item -Path ("env:" + $line.Substring(0, $i)) -Value $line.Substring($i + 1)
+    }
+  }
+  return $true
+}
+
+function Ensure-MsvcBuildTools {
+  # rustc on the *-msvc host links with link.exe + the MSVC C runtime libs
+  # (libcmt.lib). rustc auto-detects the NEWEST Visual Studio, but a VS
+  # instance can ship the compiler WITHOUT the desktop x64 libs (e.g. a
+  # partial "onecore-only" C++ install). Then every crate dies with:
+  #   LINK : fatal error LNK1104: cannot open file 'libcmt.lib'
+  # Fix: find the newest VS instance whose MSVC toolset actually has
+  # lib\<arch>\libcmt.lib and import its vcvarsall environment, which rustc
+  # honors over its own auto-detection.
+  $hostLine = & rustc -vV 2>$null | Select-String '^host:' | Select-Object -First 1
+  if ($hostLine -and $hostLine.ToString() -notmatch 'msvc') {
+    Write-Log "Rust host is not *-msvc ($hostLine) - skipping MSVC check"
+    return
+  }
+  $arch = if ($env:PROCESSOR_ARCHITECTURE -match "ARM") { "arm64" } else { "x64" }
+  if ($env:VCToolsInstallDir -and (Test-Path (Join-Path $env:VCToolsInstallDir "lib\$arch\libcmt.lib"))) {
+    Write-Log "MSVC env already active: $env:VCToolsInstallDir"
+    return
+  }
+  $vswhere = Join-Path ${env:ProgramFiles(x86)} "Microsoft Visual Studio\Installer\vswhere.exe"
+  $instances = @()
+  if (Test-Path $vswhere) {
+    try { $instances = @(& $vswhere -all -products * -format json | ConvertFrom-Json) } catch { $instances = @() }
+  }
+  if ($instances.Count -eq 0) {
+    Write-Log "vswhere found no Visual Studio - letting rustc try its own MSVC detection"
+    return
+  }
+  $good = @()
+  $broken = @()
+  foreach ($inst in $instances) {
+    $msvcRoot = Join-Path $inst.installationPath "VC\Tools\MSVC"
+    if (-not (Test-Path $msvcRoot)) { continue }
+    $hasLibs = $false
+    foreach ($v in (Get-ChildItem $msvcRoot -Directory -ErrorAction SilentlyContinue)) {
+      if (Test-Path (Join-Path $v.FullName "lib\$arch\libcmt.lib")) { $hasLibs = $true; break }
+    }
+    if ($hasLibs) { $good += $inst } else { $broken += $inst }
+  }
+  if ($good.Count -eq 0) {
+    $hint = "Install 'Desktop development with C++' via the Visual Studio Installer, or:`n  winget install Microsoft.VisualStudio.2022.BuildTools --override `"--add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --passive`"`nThen re-run the Logan one-liner."
+    if ($broken.Count -gt 0) {
+      $names = ($broken | ForEach-Object { $_.installationPath }) -join ", "
+      Die "Visual Studio C++ tools found but INCOMPLETE (no lib\$arch\libcmt.lib) in: $names. This causes 'LNK1104: cannot open file libcmt.lib'. $hint"
+    }
+    Die "No Visual Studio C++ build tools found. $hint"
+  }
+  $newestGood = $good | Sort-Object { [version]$_.installationVersion } -Descending | Select-Object -First 1
+  $vcvarsall = Join-Path $newestGood.installationPath "VC\Auxiliary\Build\vcvarsall.bat"
+  if (-not (Test-Path $vcvarsall)) {
+    Die "MSVC toolset at $($newestGood.installationPath) has libs but no vcvarsall.bat. Repair the install via the Visual Studio Installer."
+  }
+  Write-Log "MSVC: importing env from $($newestGood.installationPath) ($arch)"
+  if (-not (Import-VcVarsEnv -VcVarsAll $vcvarsall -Arch $arch)) {
+    Die "Failed to import MSVC environment from $vcvarsall"
+  }
+  Write-Log "MSVC ready: $env:VCToolsInstallDir"
+}
+
 function Ensure-Protoc {
   if ($env:PROTOC -and (Test-Path $env:PROTOC)) {
     Write-Log "protoc: $env:PROTOC"
@@ -190,24 +267,32 @@ function Try-Prebuilt {
 }
 
 function Resolve-Repo {
+  # Records the resolved path in $script:LoganInstallDir - Seed-Config reads it
+  # to refresh the skills catalog (it was previously never set, so the catalog
+  # silently never seeded on Windows).
   if ($env:LOGAN_INSTALL_SRC -and (Test-Path (Join-Path $env:LOGAN_INSTALL_SRC "Cargo.toml"))) {
-    return (Resolve-Path $env:LOGAN_INSTALL_SRC).Path
+    $script:LoganInstallDir = (Resolve-Path $env:LOGAN_INSTALL_SRC).Path
+    return $script:LoganInstallDir
   }
   Ensure-Git
   Ensure-Dir (Split-Path $InstallDir -Parent)
+  # git stdout MUST be swallowed here: a PowerShell function returns ALL
+  # pipeline output, so stray "Already up to date." lines would be prepended
+  # to the returned path and corrupt every Join-Path downstream.
   if (Test-Path (Join-Path $InstallDir ".git")) {
     Write-Log "Updating $InstallDir…"
-    git -C $InstallDir fetch --depth 1 origin $LoganRef 2>$null
-    git -C $InstallDir checkout $LoganRef 2>$null
-    git -C $InstallDir pull --ff-only origin $LoganRef 2>$null
+    git -C $InstallDir fetch --depth 1 origin $LoganRef 2>$null | Out-Null
+    git -C $InstallDir checkout $LoganRef 2>$null | Out-Null
+    git -C $InstallDir pull --ff-only origin $LoganRef 2>$null | Out-Null
   } else {
     Write-Log "Cloning $LoganRepo → $InstallDir…"
     if (Test-Path $InstallDir) { Remove-Item -Recurse -Force $InstallDir }
-    git clone --depth 1 --branch $LoganRef $LoganRepo $InstallDir
+    git clone --depth 1 --branch $LoganRef $LoganRepo $InstallDir | Out-Null
   }
   if (-not (Test-Path (Join-Path $InstallDir "Cargo.toml"))) {
     Die "clone failed: no Cargo.toml"
   }
+  $script:LoganInstallDir = $InstallDir
   return $InstallDir
 }
 
@@ -313,18 +398,49 @@ if ($pre -and (Test-Path $pre)) {
 } else {
   $repo = Resolve-Repo
   $release = Join-Path $repo "target\release\logan.exe"
-  if ((Test-Path $release) -and $env:LOGAN_FORCE_BUILD -ne "1") {
+  # Reuse only a FRESH build: an exe older than the checked-out HEAD commit is
+  # stale (git pull just brought new code) and reinstalling it means /update
+  # silently never updates.
+  $releaseFresh = $false
+  if (Test-Path $release) {
+    $headTime = [int64](git -C $repo log -1 --format=%ct 2>$null)
+    $exeTime = [DateTimeOffset]::new((Get-Item $release).LastWriteTimeUtc).ToUnixTimeSeconds()
+    $releaseFresh = ($headTime -eq 0) -or ($exeTime -ge $headTime)
+  }
+  if ($releaseFresh -and $env:LOGAN_FORCE_BUILD -ne "1") {
     Write-Log "Using existing build $release"
     $binSrc = $release
   } else {
     Ensure-Rust
+    Ensure-MsvcBuildTools
     Ensure-Protoc
     Write-Log "Building Logan release (can take several minutes)…"
+    # One-shot installer build: the incremental cache only wastes disk here
+    # and adds PDB pressure. CI builds the same way.
+    $env:CARGO_INCREMENTAL = "0"
+    $buildLog = Join-Path $env:TEMP "logan-install-build-$PID.log"
     Push-Location $repo
     try {
-      cargo build -p xai-grok-pager-bin --release
+      # cmd merges cargo's stderr progress into stdout so Windows PowerShell
+      # 5.1 never wraps it in ErrorRecords (ErrorActionPreference=Stop would
+      # otherwise abort on the first progress line).
+      cmd /c "cargo build -p xai-grok-pager-bin --release 2>&1" | Tee-Object -FilePath $buildLog
+      if ($LASTEXITCODE -ne 0) {
+        if (Select-String -Path $buildLog -Pattern "LNK1318" -Quiet) {
+          # The MSVC 14.44 (VS 17.14) PDB writer can die with "LNK1318:
+          # Unexpected PDB error; LIMIT" on very large Rust binaries. The exe
+          # itself is fine - retry the final link without a PDB. Extra flags
+          # via `cargo rustc` hit only the bin crate, so nothing else rebuilds.
+          Write-Log "Linker PDB bug (LNK1318) - retrying final link with /DEBUG:NONE…"
+          cmd /c "cargo rustc -p xai-grok-pager-bin --release --bin logan -- -Clink-arg=/DEBUG:NONE 2>&1"
+        }
+        if ($LASTEXITCODE -ne 0) {
+          Die "cargo build failed (exit $LASTEXITCODE). Scroll up for the first 'error:' line. Common causes: incomplete Visual Studio C++ tools ('LNK1104: cannot open file libcmt.lib' - install 'Desktop development with C++'), or missing protoc (set `$env:PROTOC)."
+        }
+      }
     } finally {
       Pop-Location
+      Remove-Item $buildLog -Force -ErrorAction SilentlyContinue
     }
     if (-not (Test-Path $release)) {
       Die "build finished but $release missing. If cargo failed on protoc, install protoc or set `$env:PROTOC."
