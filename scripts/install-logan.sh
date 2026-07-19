@@ -472,12 +472,17 @@ Optional self-improve journal. Use `/improve` after you install self-improve ski
 MD
   fi
 
-  if [[ -n "${REPO_ROOT:-}" && -f "${REPO_ROOT}/examples/hooks/auto-reflect.json" ]]; then
-    cp -f "${REPO_ROOT}/examples/hooks/auto-reflect.json" "${LOGAN_HOME}/hooks/" 2>/dev/null || true
-    if [[ -f "${REPO_ROOT}/examples/hooks/bin/auto-reflect.py" ]]; then
-      cp -f "${REPO_ROOT}/examples/hooks/bin/auto-reflect.py" "${LOGAN_HOME}/hooks/bin/" 2>/dev/null || true
-      chmod +x "${LOGAN_HOME}/hooks/bin/auto-reflect.py" 2>/dev/null || true
+  # Self-improvement hooks: retrospective evidence capture (failed tools,
+  # denied permissions, API errors -> IMPROVEMENTS.md at session end).
+  # Managed files - refreshed on every install. auto-reflect (stub writer)
+  # is superseded and no longer seeded; the example remains in the repo.
+  if [[ -n "${REPO_ROOT:-}" && -f "${REPO_ROOT}/examples/hooks/retrospective.json" ]]; then
+    cp -f "${REPO_ROOT}/examples/hooks/retrospective.json" "${LOGAN_HOME}/hooks/" 2>/dev/null || true
+    if [[ -f "${REPO_ROOT}/examples/hooks/bin/retro-insight.py" ]]; then
+      cp -f "${REPO_ROOT}/examples/hooks/bin/retro-insight.py" "${LOGAN_HOME}/hooks/bin/" 2>/dev/null || true
+      chmod +x "${LOGAN_HOME}/hooks/bin/retro-insight.py" 2>/dev/null || true
     fi
+    log "Retrospective hooks installed (session-end insights -> memory/IMPROVEMENTS.md)"
   fi
 }
 

@@ -139,6 +139,43 @@ grep -q 'LNK1318' "${PS1}" && grep -q 'DEBUG:NONE' "${PS1}" \
   && pass "ps1 has LNK1318 -> /DEBUG:NONE relink fallback" \
   || fail "ps1 missing LNK1318 /DEBUG:NONE fallback"
 
+# --- Self-improvement: retrospective hooks seeded by both installers ---
+grep -q 'retrospective.json' "${PS1}" && grep -q 'retro-insight.py' "${PS1}" \
+  && pass "ps1 seeds retrospective hooks" \
+  || fail "ps1 missing retrospective hook seed"
+grep -q 'retrospective.json' "${SH}" && grep -q 'retro-insight.py' "${SH}" \
+  && pass "sh seeds retrospective hooks" \
+  || fail "sh missing retrospective hook seed"
+[[ -f "${ROOT}/examples/hooks/retrospective.json" && -f "${ROOT}/examples/hooks/bin/retro-insight.py" ]] \
+  && pass "retrospective hook files exist" \
+  || fail "retrospective hook files missing"
+[[ -f "${ROOT}/skills/yuv-design-dna/SKILL.md" ]] \
+  && pass "yuv-design-dna skill in catalog" \
+  || fail "yuv-design-dna skill missing"
+grep -q 'yuv-design-dna' "${ROOT}/crates/codegen/xai-grok-pager/src/slash/commands/logan_modes.rs" \
+  && pass "yuv-design-dna wired into creative pack" \
+  || fail "yuv-design-dna not in creative pack"
+
+# retro-insight must aggregate real failures into IMPROVEMENTS.md (drive it)
+if command -v python3 >/dev/null 2>&1 || command -v python >/dev/null 2>&1; then
+  PYBIN="$(command -v python3 || command -v python)"
+  TESTHOME="$(mktemp -d)/lh"
+  mkdir -p "${TESTHOME}/memory"
+  echo '{"hookEventName":"post_tool_use_failure","sessionId":"cafe0001","toolName":"shell","toolInput":{"command":"x"},"error":"boom"}' \
+    | LOGAN_HOME="${TESTHOME}" "${PYBIN}" "${ROOT}/examples/hooks/bin/retro-insight.py" 2>/dev/null
+  echo '{"hookEventName":"session_end","sessionId":"cafe0001","reason":"exit","turnCount":1,"toolCallCount":2}' \
+    | LOGAN_HOME="${TESTHOME}" "${PYBIN}" "${ROOT}/examples/hooks/bin/retro-insight.py" 2>/dev/null
+  if grep -q 'session retrospective' "${TESTHOME}/memory/IMPROVEMENTS.md" 2>/dev/null \
+    && grep -q 'boom' "${TESTHOME}/memory/IMPROVEMENTS.md" 2>/dev/null; then
+    pass "retro-insight aggregates failures into IMPROVEMENTS.md"
+  else
+    fail "retro-insight did not write session retrospective"
+  fi
+  rm -rf "${TESTHOME%/lh}"
+else
+  pass "retro-insight drive skipped (no python on host)"
+fi
+
 grep -q '\[compat.claude\]' "${SH}" && pass "seeds compat.claude" || fail "no compat seed"
 grep -q 'use_leader = false' "${SH}" && pass "seeds use_leader false" || fail "no use_leader seed"
 grep -q 'install_bin_atomic\|.new.\$\$' "${SH}" && pass "atomic binary install" || fail "no atomic install"

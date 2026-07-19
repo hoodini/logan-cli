@@ -361,6 +361,18 @@ think = "off"
   if (-not (Test-Path $impr)) {
     "# IMPROVEMENTS`n" | Set-Content -Path $impr -Encoding UTF8
   }
+  # Self-improvement hooks: retrospective evidence capture (failed tools,
+  # denied permissions, API errors -> IMPROVEMENTS.md at session end).
+  # Managed files - safe to refresh on every install.
+  if ($script:LoganInstallDir) {
+    $srcHooks = Join-Path $script:LoganInstallDir "examples\hooks"
+    if (Test-Path (Join-Path $srcHooks "retrospective.json")) {
+      Copy-Item -Force (Join-Path $srcHooks "retrospective.json") (Join-Path $LoganHome "hooks\")
+      Copy-Item -Force (Join-Path $srcHooks "bin\retro-insight.py") (Join-Path $LoganHome "hooks\bin\")
+      Write-Log "Retrospective hooks installed (session-end insights -> ~/.logan/memory/IMPROVEMENTS.md)"
+    }
+  }
+
   # Catalog only (not active). User: /skills add …
   if ($script:LoganInstallDir -and (Test-Path (Join-Path $script:LoganInstallDir "skills"))) {
     $srcSkills = Join-Path $script:LoganInstallDir "skills"

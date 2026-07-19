@@ -54,6 +54,34 @@ After a non-trivial fix or process win, **append** to IMPROVEMENTS.md:
 4. Journal the lesson
 5. If user preference involved → update PROFILE / Preferences
 
+## Automatic retrospective protocol (hooks feed you - you close the loop)
+
+The `retrospective.json` hook records **objective evidence** without asking:
+every failed tool call, denied permission, and API error lands in
+`~/.logan/memory/retro/<sid>.jsonl`, and at session end it is aggregated into
+an IMPROVEMENTS.md entry whose Decision/Lesson lines are marked `(Logan: ...)`.
+
+Your obligations - these are not optional:
+
+1. **At session start**, scan the tail of IMPROVEMENTS.md for `(Logan:`
+   markers. For each pending retrospective: root-cause the failure class
+   (read the error, reproduce if cheap), then REPLACE the placeholder lines
+   with the real decision and a durable one-line lesson. If a lesson is a
+   user preference or environment fact, also promote it to MEMORY.md
+   (`## Lessons`) so dream consolidation and injection carry it forward.
+2. **Immediately after any bug fix** (yours or the user's code), append a
+   full IMPROVEMENTS.md entry (template above) while context is hot - never
+   defer to "later". A fix without a journaled lesson is half a fix.
+3. **When the same failure class appears in 2+ retrospectives**, that is a
+   systemic issue: propose a permanent guard (config change, new rule file,
+   skill edit, pre-flight check) to the user instead of re-fixing.
+4. **Never leave `(pending)` or `(Logan:` markers older than one session.**
+
+Division of labor: hooks capture evidence → you interpret and journal →
+autoDream (memory consolidation) distills journals into long-term MEMORY.md →
+initial injection loads it into every new session. You are the only step that
+can turn evidence into insight - do it.
+
 ## Answering "why did you decide that?"
 
 Be explicit:
