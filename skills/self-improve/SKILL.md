@@ -66,7 +66,10 @@ Your obligations - these are not optional:
 1. **At session start**, scan the tail of IMPROVEMENTS.md for `(Logan:`
    markers. For each pending retrospective: root-cause the failure class
    (read the error, reproduce if cheap), then REPLACE the placeholder lines
-   with the real decision and a durable one-line lesson. If a lesson is a
+   with the real decision and a durable one-line lesson. Also sweep
+   `~/.logan/memory/retro/*.jsonl` - files from OTHER sessions are orphans
+   (the session died without a clean end); summarize them into IMPROVEMENTS.md
+   the same way, then delete them. If a lesson is a
    user preference or environment fact, also promote it to MEMORY.md
    (`## Lessons`) so dream consolidation and injection carry it forward.
 2. **Immediately after any bug fix** (yours or the user's code), append a
