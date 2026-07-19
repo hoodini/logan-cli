@@ -173,16 +173,23 @@ Without that, Logan does **not** run the "every crumb" teach style.
 ### Creative pack (only after you opt in)
 
 ```text
-/skills add pack creative
+/skills add pack creative      # aliases: video · scrub · design
 ```
 
 | Intent | Command | Skill |
 | --- | --- | --- |
+| Design DNA for ANY web deliverable | automatic once installed | `yuv-design-dna` |
 | Mouse-scrub landing | `/site mouse video.mp4` | `cinematic-scrub-landing` |
 | Scroll-scrub parallax | `/site parallax video.mp4` | `parallax-landing-page` |
 | Apple sticky scroll | `/site scroll video.mp4` | `video-to-landing-page` |
 | Captioned reel | `/reel video.mp4` | `video-edit` |
 | Stack map | `/creative` | shows installed vs catalog |
+
+`yuv-design-dna` is the umbrella: signature scrub/parallax heroes by default,
+HyperFrames catalog before hand-rolled motion, the YUV design system (palettes,
+Anton/Inter + Rubik/Assistant, radii 0/999), and **blocking** gates for WCAG AA
+accessibility, mobile-first at 390px, reduced-motion fallbacks, and an
+anti-AI-look checklist - pages ship with a human touch, not a template smell.
 
 If a skill is missing, Logan tells you how to add it - it does not invent the stack silently.
 
@@ -208,6 +215,33 @@ Enabling a mode without the skill installed fails with a clear `/skills add …`
 LOGAN_SEED_SKILLS=1 …              # install entire catalog into active skills (not default)
 LOGAN_SYNC_SIBLING_SKILLS=1 …      # also copy from ~/.claude / ~/.grok skills
 ```
+
+---
+
+## How Logan improves itself
+
+Self-improvement is a closed loop of four parts - three are automatic, one is
+the model's standing obligation:
+
+| Stage | Mechanism | Automatic? |
+| --- | --- | --- |
+| **Evidence** | `retrospective.json` hook (seeded by the installer): every failed tool call, denied permission, and API error is recorded; at session end they are aggregated into a structured entry in `~/.logan/memory/IMPROVEMENTS.md` | yes |
+| **Insight** | The `self-improve` skill obliges Logan to root-cause pending `(Logan:` retrospectives at session start, journal a lesson after every bug fix, and escalate failure classes seen twice into permanent guards | model-driven |
+| **Consolidation** | autoDream (`[memory.dream]` in config.toml): a periodic background pass distills recent sessions and journals into curated `MEMORY.md` | yes |
+| **Recall** | `[memory.initial_injection]`: curated memory (preferences + lessons) is injected into every new session | yes |
+
+Inspect and steer it any time:
+
+```text
+/improve          # dashboard: reflections, lessons, open questions
+/improve log      # tail reflections.log + IMPROVEMENTS.md
+/heal             # failure-focused view
+/flush            # force a rich session summary into memory
+```
+
+Files, if you want to read what it learned: `~/.logan/memory/IMPROVEMENTS.md`
+(structured journal), `~/.logan/memory/reflections.log` (event firehose),
+`~/.logan/memory/MEMORY.md` (curated long-term memory - Preferences + Lessons).
 
 ---
 
